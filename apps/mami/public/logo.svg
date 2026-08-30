@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
+  <rect width="120" height="40" rx="10" fill="#2D3277"/>
+  <text x="12" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="900" fill="#FFE600" letter-spacing="-0.5">mami</text>
+  <path d="M96 11 L98 17 L104 19 L98 21 L96 27 L94 21 L88 19 L94 17 Z" fill="#FFE600"/>
+  <circle cx="106" cy="11" r="2" fill="#FFE600"/>
+  <circle cx="90" cy="27" r="1.5" fill="#FFE600"/>
+</svg>

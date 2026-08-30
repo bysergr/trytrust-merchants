@@ -18,6 +18,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vuela Ya | Colombian Domestic Flights & Live Seat Booking",
   description: "Search, compare, choose seats, and book domestic flights across Colombia with live seat hold locking and MCP server integration.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

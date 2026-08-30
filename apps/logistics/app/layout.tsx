@@ -16,8 +16,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Uber Logistics & Mobility Platform | Rides, Courier, Freight",
-  description: "Unified web platform and MCP server for passenger rides, express courier delivery, and commercial freight transport.",
+  title: "Uber Logistics & Mobility Platform | Bogotá D.C.",
+  description: "Unified web platform and MCP server for passenger rides, express courier delivery, and commercial freight transport in Bogotá.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

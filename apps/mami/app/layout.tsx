@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mami Market — Express Snack & Grocery Delivery (4h Guarantee)",
   description: "Browse authentic snacks, cookies, sodas, and drinks with instant 4-hour express delivery. Built with Next.js App Router and MCP Server.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
