@@ -47,6 +47,7 @@ export function registerMcpTools(server: any): void {
             formatted_price: `$${p.price.toLocaleString('en-US')} COP`,
             stock: p.current_stock,
             category: p.category,
+            image_url: p.image_url,
           })),
         };
 
@@ -90,6 +91,7 @@ export function registerMcpTools(server: any): void {
           formatted_price: `$${p.price.toLocaleString('en-US')} COP`,
           stock: p.current_stock,
           category: p.category,
+          image_url: p.image_url,
         }));
 
         return {
