@@ -8,13 +8,15 @@ import { DeliveryAddress } from '../types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerMcpTools(server: any): void {
   // 1. list_products
-  server.tool(
+  server.registerTool(
     'list_products',
-    'List available products in the catalog with pagination and optional category filtering.',
     {
-      page: z.number().int().min(1).optional().describe('Page number (default: 1)'),
-      limit: z.number().int().min(1).max(100).optional().describe('Number of items per page (default: 20)'),
-      category: z.string().optional().describe('Filter by category name (e.g. "Snacks & Chips", "Beverages & Sodas", etc.)'),
+      description: 'List available products in the catalog with pagination and optional category filtering.',
+      inputSchema: {
+        page: z.number().int().min(1).optional().describe('Page number (default: 1)'),
+        limit: z.number().int().min(1).max(100).optional().describe('Number of items per page (default: 20)'),
+        category: z.string().optional().describe('Filter by category name (e.g. "Snacks & Chips", "Beverages & Sodas", etc.)'),
+      },
     },
     async ({ page, limit, category }: { page?: number; limit?: number; category?: string }) => {
       try {
@@ -55,13 +57,15 @@ export function registerMcpTools(server: any): void {
   );
 
   // 2. search_products
-  server.tool(
+  server.registerTool(
     'search_products',
-    'Search products in the catalog by query keyword (matches title, description, or category).',
     {
-      query: z.string().describe('Search query keyword'),
-      category: z.string().optional().describe('Optional category filter'),
-      limit: z.number().int().min(1).max(100).optional().describe('Maximum number of products to return (default: 20)'),
+      description: 'Search products in the catalog by query keyword (matches title, description, or category).',
+      inputSchema: {
+        query: z.string().describe('Search query keyword'),
+        category: z.string().optional().describe('Optional category filter'),
+        limit: z.number().int().min(1).max(100).optional().describe('Maximum number of products to return (default: 20)'),
+      },
     },
     async ({ query, category, limit }: { query: string; category?: string; limit?: number }) => {
       try {
@@ -97,13 +101,15 @@ export function registerMcpTools(server: any): void {
   );
 
   // 3. add_to_cart
-  server.tool(
+  server.registerTool(
     'add_to_cart',
-    'Add an item to the shopping cart. If session_id is not provided, the server generates a new one and returns it. Always preserve the returned session_id for subsequent cart operations.',
     {
-      session_id: z.string().optional().describe('Cart session ID. Omit on initial call to generate a new session ID.'),
-      product_id: z.string().describe('The product ID or SKU to add'),
-      quantity: z.number().int().min(1).describe('Quantity of the product to add'),
+      description: 'Add an item to the shopping cart. If session_id is not provided, the server generates a new one and returns it. Always preserve the returned session_id for subsequent cart operations.',
+      inputSchema: {
+        session_id: z.string().optional().describe('Cart session ID. Omit on initial call to generate a new session ID.'),
+        product_id: z.string().describe('The product ID or SKU to add'),
+        quantity: z.number().int().min(1).describe('Quantity of the product to add'),
+      },
     },
     async ({ session_id, product_id, quantity }: { session_id?: string; product_id: string; quantity: number }) => {
       try {
@@ -153,13 +159,15 @@ export function registerMcpTools(server: any): void {
   );
 
   // 4. remove_from_cart
-  server.tool(
+  server.registerTool(
     'remove_from_cart',
-    'Remove a product from the shopping cart or decrease its quantity.',
     {
-      session_id: z.string().describe('The active cart session ID'),
-      product_id: z.string().describe('The product ID or SKU to remove'),
-      quantity: z.number().int().min(1).optional().describe('Optional quantity to subtract. If omitted or >= current quantity, item is removed entirely.'),
+      description: 'Remove a product from the shopping cart or decrease its quantity.',
+      inputSchema: {
+        session_id: z.string().describe('The active cart session ID'),
+        product_id: z.string().describe('The product ID or SKU to remove'),
+        quantity: z.number().int().min(1).optional().describe('Optional quantity to subtract. If omitted or >= current quantity, item is removed entirely.'),
+      },
     },
     async ({ session_id, product_id, quantity }: { session_id: string; product_id: string; quantity?: number }) => {
       try {
@@ -209,11 +217,13 @@ export function registerMcpTools(server: any): void {
   );
 
   // 5. review_cart
-  server.tool(
+  server.registerTool(
     'review_cart',
-    'Review all items, quantities, subtotals, and total price in the active cart before checkout.',
     {
-      session_id: z.string().describe('The active cart session ID'),
+      description: 'Review all items, quantities, subtotals, and total price in the active cart before checkout.',
+      inputSchema: {
+        session_id: z.string().describe('The active cart session ID'),
+      },
     },
     async ({ session_id }: { session_id: string }) => {
       try {
@@ -263,22 +273,24 @@ export function registerMcpTools(server: any): void {
   );
 
   // 6. pay
-  server.tool(
+  server.registerTool(
     'pay',
-    'Execute atomic checkout and payment for the active cart. Validates stock, decrements inventory, creates order, and calculates estimated arrival time.',
     {
-      session_id: z.string().describe('The active cart session ID'),
-      delivery_address: z.union([
-        z.string().describe('Plain text delivery address'),
-        z.object({
-          street: z.string().describe('Street address and apartment/unit number'),
-          city: z.string().describe('City name'),
-          postal_code: z.string().optional().describe('Postal / Zip code'),
-          recipient_name: z.string().optional().describe('Name of recipient'),
-          phone: z.string().optional().describe('Contact phone number'),
-          notes: z.string().optional().describe('Delivery instructions or access notes'),
-        }),
-      ]).describe('Delivery destination address'),
+      description: 'Execute atomic checkout and payment for the active cart. Validates stock, decrements inventory, creates order, and calculates estimated arrival time.',
+      inputSchema: {
+        session_id: z.string().describe('The active cart session ID'),
+        delivery_address: z.union([
+          z.string().describe('Plain text delivery address'),
+          z.object({
+            street: z.string().describe('Street address and apartment/unit number'),
+            city: z.string().describe('City name'),
+            postal_code: z.string().optional().describe('Postal / Zip code'),
+            recipient_name: z.string().optional().describe('Name of recipient'),
+            phone: z.string().optional().describe('Contact phone number'),
+            notes: z.string().optional().describe('Delivery instructions or access notes'),
+          }),
+        ]).describe('Delivery destination address'),
+      },
     },
     async ({ session_id, delivery_address }: { session_id: string; delivery_address: string | DeliveryAddress }) => {
       try {
