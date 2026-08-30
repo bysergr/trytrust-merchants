@@ -121,8 +121,8 @@ async function runMcpTests() {
   console.log(`  Released seat 1C. Remaining seats: ${releaseRes.remaining_held_seats.map(s => s.seat_number).join(', ')}`);
   console.log('✅ Tool 7 (release_seat) passed.\n');
 
-  // 8. Tool 8: pay (Atomic confirmation)
-  console.log('Step 8: Testing Tool 8 - pay...');
+  // 8. Tool 8: pay (Atomic confirmation with booking_session_id)
+  console.log('Step 8: Testing Tool 8 - pay (with session hold)...');
   const payRes = executePayment({
     booking_session_id: sessionId,
     passenger_name: 'Carlos Mendoza',
@@ -145,7 +145,35 @@ async function runMcpTests() {
     throw new Error(`Expected seat 1A status to be 'booked', got '${seat1A?.status}'`);
   }
   console.log(`  Seat 1A status in database: '${seat1A.status}' (booked)`);
-  console.log('✅ Tool 8 (pay) passed.\n');
+  console.log('✅ Tool 8a (pay with hold session) passed.\n');
+
+  // 8b. Tool 8: pay directly with flight_id and seat_number (no prior hold)
+  console.log('Step 8b: Testing Tool 8 - pay directly (flight_id + seat_number)...');
+  const initialAvailable = getFlightDetails(flight1.id).seat_availability.available_seats;
+  const directPayRes = executePayment({
+    flight_id: flight1.id,
+    seat_number: '12B',
+    passenger_name: 'Ana Gomez',
+    passenger_document_id: '987654321',
+    contact_email: 'ana.gomez@example.com',
+  });
+
+  if (!directPayRes.success || !directPayRes.booking_reference.startsWith('VY-')) {
+    throw new Error('Direct payment confirmation failed or invalid PNR');
+  }
+  const afterDirectMap = getSeatMap(flight1.id);
+  const seat12B = afterDirectMap.seats.find(s => s.seat_number === '12B');
+  if (seat12B?.status !== 'booked') {
+    throw new Error(`Expected seat 12B status to be 'booked', got '${seat12B?.status}'`);
+  }
+  const afterAvailable = getFlightDetails(flight1.id).seat_availability.available_seats;
+  if (afterAvailable !== initialAvailable - 1) {
+    throw new Error(`Expected remaining inventory to decrease by 1, was ${initialAvailable}, now ${afterAvailable}`);
+  }
+  console.log(`  ✅ Direct booking confirmed! Reference Code: ${directPayRes.booking_reference}`);
+  console.log(`  Seat 12B status in database: '${seat12B.status}' (booked)`);
+  console.log(`  Remaining inventory reduced from ${initialAvailable} to ${afterAvailable}`);
+  console.log('✅ Tool 8b (pay directly with flight_id + seat_number) passed.\n');
 
   // 9. Test Lazy Hold Expiration
   console.log('Step 9: Testing Lazy Hold Expiration...');

@@ -389,8 +389,9 @@ export function generateSeatMapForFlight(
     for (const letter of businessLetters) {
       // Row 1 has premium front legroom (+20,000 COP)
       const seatModifier = row === 1 ? 20000 : 0;
+      const seatId = 'st_' + crypto.createHash('md5').update(`${flightId}_${row}${letter}`).digest('hex').slice(0, 16);
       seats.push({
-        id: crypto.randomUUID(),
+        id: seatId,
         flight_id: flightId,
         seat_number: `${row}${letter}`,
         cabin_class: 'business',
@@ -420,8 +421,9 @@ export function generateSeatMapForFlight(
         seatModifier += 5000;
       }
 
+      const seatId = 'st_' + crypto.createHash('md5').update(`${flightId}_${row}${letter}`).digest('hex').slice(0, 16);
       seats.push({
-        id: crypto.randomUUID(),
+        id: seatId,
         flight_id: flightId,
         seat_number: `${row}${letter}`,
         cabin_class: 'economy',
@@ -486,9 +488,9 @@ export function seedDatabase(customDb?: Database.Database): { airportsCount: num
 
           const arrival = new Date(departure.getTime() + route.durationMinutes * 60 * 1000);
 
-          const flightId = crypto.randomUUID();
           const flightNumSuffix = `${idx + 1}`.padStart(2, '0');
           const flightNumber = `${route.flightPrefix}${flightNumSuffix}`;
+          const flightId = 'fl_' + crypto.createHash('md5').update(`${route.origin}_${route.destination}_${flightNumber}_${departure.toISOString().slice(0, 13)}_${schedule.depMin}`).digest('hex').slice(0, 16);
 
           insertFlightStmt.run(
             flightId,

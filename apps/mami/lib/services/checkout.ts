@@ -93,6 +93,8 @@ export function executeCheckout(params: PayParams): OrderDetail {
       quantity: number;
       unit_price: number;
       subtotal: number;
+      previous_stock?: number;
+      remaining_stock?: number;
       image_url: string;
     }> = [];
 
@@ -132,6 +134,8 @@ export function executeCheckout(params: PayParams): OrderDetail {
         quantity: item.quantity,
         unit_price: item.frozen_unit_price,
         subtotal,
+        previous_stock: invRow.current_stock,
+        remaining_stock: invRow.current_stock - item.quantity,
         image_url: item.image_url,
       });
     }

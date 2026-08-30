@@ -208,7 +208,10 @@ export interface ReleaseSeatResult {
 }
 
 export interface PayParams {
-  booking_session_id: string;
+  booking_session_id?: string;
+  flight_id?: string;
+  seat_number?: string;
+  seat_numbers?: string[];
   passenger_name: string;
   passenger_document_id: string;
   contact_email: string;

@@ -34,6 +34,19 @@ export function getDatabase(): Database.Database {
     }
   }
 
+  // If getDatabasePath() returns /tmp/... and the file does not exist in /tmp,
+  // check if path.join(process.cwd(), 'data', 'app.db') exists. If so, copy it to /tmp/...
+  if (dbPath.startsWith('/tmp') && !fs.existsSync(/*turbopackIgnore: true*/ dbPath)) {
+    const bundledDbPath = path.join(process.cwd(), 'data', 'app.db');
+    if (fs.existsSync(bundledDbPath)) {
+      try {
+        fs.copyFileSync(bundledDbPath, dbPath);
+      } catch (err) {
+        console.warn('Failed to copy bundled database to /tmp:', err);
+      }
+    }
+  }
+
   const db = new Database(dbPath);
 
   // High concurrency & compatibility settings
@@ -119,8 +132,9 @@ export function initSchema(db: Database.Database): void {
 
 export function autoSeedIfEmpty(db: Database.Database): void {
   try {
-    const countRow = db.prepare(`SELECT COUNT(*) as count FROM airports`).get() as { count: number } | undefined;
-    if (!countRow || countRow.count === 0) {
+    const airportRow = db.prepare(`SELECT COUNT(*) as count FROM airports`).get() as { count: number } | undefined;
+    const flightRow = db.prepare(`SELECT COUNT(*) as count FROM flights`).get() as { count: number } | undefined;
+    if (!airportRow || airportRow.count === 0 || !flightRow || flightRow.count === 0) {
       seedDatabase(db);
     }
   } catch {

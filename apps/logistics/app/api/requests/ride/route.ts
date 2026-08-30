@@ -7,7 +7,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { vehicle_type_id, pickup_address, dropoff_address, scheduled_at, session_id } = body;
+    const {
+      vehicle_type_id,
+      pickup_address,
+      dropoff_address,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
+      scheduled_at,
+      session_id,
+    } = body;
 
     const { sessionId, isNew } = getSessionIdFromRequest(request, session_id);
 
@@ -26,6 +36,10 @@ export async function POST(request: NextRequest) {
         vehicle_type_id,
         pickup_address,
         dropoff_address,
+        pickup_lat: typeof pickup_lat === 'number' ? pickup_lat : undefined,
+        pickup_lng: typeof pickup_lng === 'number' ? pickup_lng : undefined,
+        dropoff_lat: typeof dropoff_lat === 'number' ? dropoff_lat : undefined,
+        dropoff_lng: typeof dropoff_lng === 'number' ? dropoff_lng : undefined,
         scheduled_at,
       },
       sessionId

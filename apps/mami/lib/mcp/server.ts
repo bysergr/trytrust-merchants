@@ -317,9 +317,11 @@ export function registerMcpTools(server: any): void {
             sku: i.sku,
             name: i.name,
             properties: i.properties,
-            quantity: i.quantity,
+            quantity_purchased: i.quantity,
             unit_price_cop: i.unit_price,
             subtotal_cop: i.subtotal,
+            previous_stock: i.previous_stock,
+            remaining_stock: i.remaining_stock,
           })),
         };
 

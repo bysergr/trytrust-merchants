@@ -35,7 +35,7 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'list_vehicle_types',
-    'List all available vehicle types and pricing rates for a given service (ride, package delivery, or freight cargo).',
+    'List all available vehicle types and pricing rates in Bogotá for a given service (ride passenger mobility, package courier delivery, or freight cargo transport).',
     {
       service: z
         .enum(['ride', 'package', 'freight'])
@@ -45,14 +45,18 @@ export function registerMcpTools(server: any): void {
       try {
         const vehicles = listVehicleTypes(service);
         const formatted = {
+          location: 'Bogotá D.C., Colombia',
+          currency: 'COP (Colombian Pesos)',
           service,
           total_options: vehicles.length,
           vehicle_types: vehicles.map((v) => ({
             id: v.id,
             name: v.name,
             description: v.description,
-            base_fare_usd: v.base_fare,
-            per_km_rate_usd: v.per_km_rate,
+            base_fare_cop: v.base_fare,
+            base_fare_formatted: `$${v.base_fare.toLocaleString('es-CO')} COP`,
+            per_km_rate_cop: v.per_km_rate,
+            per_km_rate_formatted: `$${v.per_km_rate.toLocaleString('es-CO')} COP/km`,
             passenger_capacity: v.passenger_capacity ?? 'N/A',
             capacity_kg: v.capacity_kg ? `${v.capacity_kg} kg` : 'N/A',
             current_available_count: v.count_available,
@@ -83,12 +87,16 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'get_quote',
-    'Get an upfront fare estimate, estimated travel duration, and ETA for a ride, package, or freight request without creating an order.',
+    'Get an upfront fare estimate in COP, estimated travel duration, and ETA for a ride, package, or freight request in Bogotá without creating an order.',
     {
       service: z.enum(['ride', 'package', 'freight']).describe('The service type ("ride", "package", or "freight")'),
       vehicle_type_id: z.string().describe('ID of the vehicle type (e.g., "ride-economy", "pkg-motorcycle", "freight-box-truck")'),
-      pickup_address: z.string().describe('Full pickup street address or location landmark'),
-      dropoff_address: z.string().describe('Full dropoff street address or destination landmark'),
+      pickup_address: z.string().describe('Full pickup street address or location landmark in Bogotá (e.g., "Parque de la 93", "Aeropuerto El Dorado")'),
+      dropoff_address: z.string().describe('Full dropoff street address or destination landmark in Bogotá (e.g., "Torre Colpatria", "Zona T")'),
+      pickup_lat: z.number().optional().describe('Optional custom pickup latitude (e.g. 4.6768)'),
+      pickup_lng: z.number().optional().describe('Optional custom pickup longitude (e.g. -74.0536)'),
+      dropoff_lat: z.number().optional().describe('Optional custom dropoff latitude (e.g. 4.7016)'),
+      dropoff_lng: z.number().optional().describe('Optional custom dropoff longitude (e.g. -74.1469)'),
       scheduled_at: z.string().optional().describe('Optional ISO-8601 datetime string for advance scheduled pickup (e.g., "2026-09-01T14:30:00Z"). Leave empty for immediate dispatch.'),
     },
     async ({
@@ -96,12 +104,20 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id,
       pickup_address,
       dropoff_address,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
       scheduled_at,
     }: {
       service: ServiceType;
       vehicle_type_id: string;
       pickup_address: string;
       dropoff_address: string;
+      pickup_lat?: number;
+      pickup_lng?: number;
+      dropoff_lat?: number;
+      dropoff_lng?: number;
       scheduled_at?: string;
     }) => {
       try {
@@ -110,16 +126,21 @@ export function registerMcpTools(server: any): void {
           vehicle_type_id,
           pickup_address,
           dropoff_address,
+          pickup_lat,
+          pickup_lng,
+          dropoff_lat,
+          dropoff_lng,
           scheduled_at: scheduled_at || null,
         });
 
         const formatted = {
+          city: 'Bogotá D.C., Colombia',
           service: quote.service,
           vehicle: {
             id: quote.vehicle_type.id,
             name: quote.vehicle_type.name,
-            base_fare_usd: quote.base_fare,
-            per_km_rate_usd: quote.vehicle_type.per_km_rate,
+            base_fare_cop: quote.base_fare,
+            per_km_rate_cop: quote.vehicle_type.per_km_rate,
           },
           route: {
             pickup: quote.pickup_address,
@@ -129,11 +150,13 @@ export function registerMcpTools(server: any): void {
             duration_summary: quote.estimated_duration_text,
           },
           pricing: {
-            base_fare_usd: quote.base_fare,
-            distance_fare_usd: quote.distance_fare,
-            weight_surcharge_usd: quote.weight_surcharge,
-            total_price_usd: quote.total_price,
-            formatted_total: `$${quote.total_price.toFixed(2)} USD`,
+            currency: 'COP',
+            base_fare_cop: quote.base_fare,
+            distance_fare_cop: quote.distance_fare,
+            weight_surcharge_cop: quote.weight_surcharge,
+            total_price_cop: quote.total_price,
+            formatted_total: `$${quote.total_price.toLocaleString('es-CO')} COP`,
+            approx_usd: `$${(quote.total_price / 4000).toFixed(2)} USD`,
           },
           estimated_arrival_at: quote.estimated_arrival_at,
           scheduled_at: quote.scheduled_at,
@@ -163,12 +186,16 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'request_ride',
-    'Request and match an on-demand passenger ride. Atomically allocates an available vehicle and returns trip details with session tracking handle.',
+    'Request and match an on-demand passenger ride in Bogotá. Atomically allocates an available vehicle and returns trip details with session tracking handle.',
     {
       session_id: z.string().optional().describe('Optional session handle. If not provided, a new session ID is created and returned.'),
       vehicle_type_id: z.string().describe('ID of the vehicle type (e.g., "ride-economy", "ride-comfort", "ride-xl")'),
-      pickup_address: z.string().describe('Pickup location street address or landmark'),
-      dropoff_address: z.string().describe('Destination street address or landmark'),
+      pickup_address: z.string().describe('Pickup location street address or landmark in Bogotá'),
+      dropoff_address: z.string().describe('Destination street address or landmark in Bogotá'),
+      pickup_lat: z.number().optional().describe('Optional custom pickup latitude'),
+      pickup_lng: z.number().optional().describe('Optional custom pickup longitude'),
+      dropoff_lat: z.number().optional().describe('Optional custom dropoff latitude'),
+      dropoff_lng: z.number().optional().describe('Optional custom dropoff longitude'),
       scheduled_at: z.string().optional().describe('Optional ISO-8601 datetime for advance scheduled ride (or null for immediate)'),
     },
     async ({
@@ -176,12 +203,20 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id,
       pickup_address,
       dropoff_address,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
       scheduled_at,
     }: {
       session_id?: string;
       vehicle_type_id: string;
       pickup_address: string;
       dropoff_address: string;
+      pickup_lat?: number;
+      pickup_lng?: number;
+      dropoff_lat?: number;
+      dropoff_lng?: number;
       scheduled_at?: string;
     }) => {
       try {
@@ -191,6 +226,10 @@ export function registerMcpTools(server: any): void {
             vehicle_type_id,
             pickup_address,
             dropoff_address,
+            pickup_lat,
+            pickup_lng,
+            dropoff_lat,
+            dropoff_lng,
             scheduled_at,
           },
           effectiveSessionId
@@ -198,7 +237,7 @@ export function registerMcpTools(server: any): void {
 
         const formatted = {
           success: true,
-          message: 'Ride request matched successfully!',
+          message: 'Ride request in Bogotá matched successfully!',
           session_id: effectiveSessionId,
           request_id: request.id,
           service: request.service,
@@ -209,8 +248,9 @@ export function registerMcpTools(server: any): void {
             vehicle_plate: request.driver_plate,
             rating: request.driver_rating,
           },
-          price_usd: request.price,
-          formatted_price: `$${request.price.toFixed(2)} USD`,
+          price_cop: request.price,
+          formatted_price: `$${request.price.toLocaleString('es-CO')} COP`,
+          approx_usd: `$${(request.price / 4000).toFixed(2)} USD`,
           estimated_arrival_at: request.estimated_arrival_at,
           pickup_address: request.pickup_address,
           dropoff_address: request.dropoff_address,
@@ -242,13 +282,17 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'request_package_delivery',
-    'Request a courier delivery for packages, documents, or parcels. Dispatches motorcycle or van courier.',
+    'Request a courier delivery in Bogotá for packages, documents, or parcels (Uber Flash). Dispatches motorcycle or van courier.',
     {
       session_id: z.string().optional().describe('Optional session handle. If not provided, a new session ID is created and returned.'),
       vehicle_type_id: z.string().describe('ID of courier vehicle ("pkg-motorcycle" or "pkg-courier-van")'),
-      pickup_address: z.string().describe('Origin pickup address for the package'),
-      dropoff_address: z.string().describe('Destination dropoff address for the package'),
-      package_description: z.string().describe('Description of the parcel/package contents (e.g., "Urgent contract documents", "Box of electronics")'),
+      pickup_address: z.string().describe('Origin pickup address in Bogotá for the package'),
+      dropoff_address: z.string().describe('Destination dropoff address in Bogotá for the package'),
+      pickup_lat: z.number().optional().describe('Optional custom pickup latitude'),
+      pickup_lng: z.number().optional().describe('Optional custom pickup longitude'),
+      dropoff_lat: z.number().optional().describe('Optional custom dropoff latitude'),
+      dropoff_lng: z.number().optional().describe('Optional custom dropoff longitude'),
+      package_description: z.string().describe('Description of the parcel/package contents (e.g., "Urgent corporate contracts", "Box of electronics")'),
       package_weight_kg: z.number().positive().describe('Weight of package in kilograms (e.g., 2.5)'),
       scheduled_at: z.string().optional().describe('Optional scheduled pickup ISO datetime'),
     },
@@ -257,6 +301,10 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id,
       pickup_address,
       dropoff_address,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
       package_description,
       package_weight_kg,
       scheduled_at,
@@ -265,6 +313,10 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id: string;
       pickup_address: string;
       dropoff_address: string;
+      pickup_lat?: number;
+      pickup_lng?: number;
+      dropoff_lat?: number;
+      dropoff_lng?: number;
       package_description: string;
       package_weight_kg: number;
       scheduled_at?: string;
@@ -276,6 +328,10 @@ export function registerMcpTools(server: any): void {
             vehicle_type_id,
             pickup_address,
             dropoff_address,
+            pickup_lat,
+            pickup_lng,
+            dropoff_lat,
+            dropoff_lng,
             package_description,
             package_weight_kg,
             scheduled_at,
@@ -285,7 +341,7 @@ export function registerMcpTools(server: any): void {
 
         const formatted = {
           success: true,
-          message: 'Package delivery courier dispatched successfully!',
+          message: 'Uber Flash courier in Bogotá dispatched successfully!',
           session_id: effectiveSessionId,
           request_id: request.id,
           service: request.service,
@@ -300,8 +356,9 @@ export function registerMcpTools(server: any): void {
             description: request.package_description,
             weight_kg: request.package_weight_kg,
           },
-          price_usd: request.price,
-          formatted_price: `$${request.price.toFixed(2)} USD`,
+          price_cop: request.price,
+          formatted_price: `$${request.price.toLocaleString('es-CO')} COP`,
+          approx_usd: `$${(request.price / 4000).toFixed(2)} USD`,
           estimated_arrival_at: request.estimated_arrival_at,
           pickup_address: request.pickup_address,
           dropoff_address: request.dropoff_address,
@@ -332,13 +389,17 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'request_freight',
-    'Request commercial freight or bulk cargo transport using sprinter vans, box trucks, or heavy flatbeds.',
+    'Request commercial freight or bulk cargo transport across the Bogotá-Siberia-Funza logistics corridor.',
     {
       session_id: z.string().optional().describe('Optional session handle. If not provided, a new session ID is created and returned.'),
       vehicle_type_id: z.string().describe('Freight vehicle type ("freight-cargo-van", "freight-box-truck", or "freight-heavy-semi")'),
-      pickup_address: z.string().describe('Loading dock or origin warehouse address'),
-      dropoff_address: z.string().describe('Unloading facility or destination warehouse address'),
-      cargo_description: z.string().describe('Description of commercial cargo/pallets/freight (e.g., "4 pallets industrial pumps")'),
+      pickup_address: z.string().describe('Loading dock or origin warehouse address (e.g., "Zona Franca Fontibón")'),
+      dropoff_address: z.string().describe('Unloading facility or destination warehouse address (e.g., "Parque Industrial Siberia")'),
+      pickup_lat: z.number().optional().describe('Optional custom pickup latitude'),
+      pickup_lng: z.number().optional().describe('Optional custom pickup longitude'),
+      dropoff_lat: z.number().optional().describe('Optional custom dropoff latitude'),
+      dropoff_lng: z.number().optional().describe('Optional custom dropoff longitude'),
+      cargo_description: z.string().describe('Description of commercial cargo/pallets/freight (e.g., "3 pallets industrial cooling pumps")'),
       cargo_weight_kg: z.number().positive().describe('Total cargo weight in kilograms (e.g., 1850)'),
       scheduled_at: z.string().optional().describe('Optional scheduled freight loading ISO datetime'),
     },
@@ -347,6 +408,10 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id,
       pickup_address,
       dropoff_address,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
       cargo_description,
       cargo_weight_kg,
       scheduled_at,
@@ -355,6 +420,10 @@ export function registerMcpTools(server: any): void {
       vehicle_type_id: string;
       pickup_address: string;
       dropoff_address: string;
+      pickup_lat?: number;
+      pickup_lng?: number;
+      dropoff_lat?: number;
+      dropoff_lng?: number;
       cargo_description: string;
       cargo_weight_kg: number;
       scheduled_at?: string;
@@ -366,6 +435,10 @@ export function registerMcpTools(server: any): void {
             vehicle_type_id,
             pickup_address,
             dropoff_address,
+            pickup_lat,
+            pickup_lng,
+            dropoff_lat,
+            dropoff_lng,
             cargo_description,
             cargo_weight_kg,
             scheduled_at,
@@ -375,7 +448,7 @@ export function registerMcpTools(server: any): void {
 
         const formatted = {
           success: true,
-          message: 'Freight transport carrier matched and scheduled!',
+          message: 'Bogotá freight carrier matched and scheduled!',
           session_id: effectiveSessionId,
           request_id: request.id,
           service: request.service,
@@ -390,8 +463,9 @@ export function registerMcpTools(server: any): void {
             description: request.cargo_description,
             weight_kg: request.cargo_weight_kg,
           },
-          price_usd: request.price,
-          formatted_price: `$${request.price.toFixed(2)} USD`,
+          price_cop: request.price,
+          formatted_price: `$${request.price.toLocaleString('es-CO')} COP`,
+          approx_usd: `$${(request.price / 4000).toFixed(2)} USD`,
           estimated_arrival_at: request.estimated_arrival_at,
           pickup_address: request.pickup_address,
           dropoff_address: request.dropoff_address,
@@ -422,7 +496,7 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'track_request',
-    'Track the real-time status, ETA, and details of any active or past ride, package delivery, or freight shipment.',
+    'Track the real-time status, ETA, and details of any active or past ride, package delivery, or freight shipment in Bogotá.',
     {
       session_id: z.string().describe('The session ID associated with the request'),
       request_id: z.string().describe('The unique request ID (e.g., "req_1234567890ab")'),
@@ -448,8 +522,8 @@ export function registerMcpTools(server: any): void {
           dropoff_address: request.dropoff_address,
           distance_km: request.distance_km,
           duration_minutes: request.duration_minutes,
-          price_usd: request.price,
-          formatted_price: `$${request.price.toFixed(2)} USD`,
+          price_cop: request.price,
+          formatted_price: `$${request.price.toLocaleString('es-CO')} COP`,
           payment_status: request.payment_status,
           driver: request.driver_name
             ? {
@@ -496,7 +570,7 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'cancel_request',
-    'Cancel an active ride, delivery, or freight request and release the allocated vehicle back into the available fleet pool.',
+    'Cancel an active ride, delivery, or freight request in Bogotá and release the allocated vehicle back into the available fleet pool.',
     {
       session_id: z.string().describe('The session ID that owns the request'),
       request_id: z.string().describe('The request ID to cancel'),
@@ -506,7 +580,7 @@ export function registerMcpTools(server: any): void {
         const updated = cancelRequest(request_id, session_id);
         const formatted = {
           success: true,
-          message: `Request "${request_id}" was successfully cancelled. The vehicle has been returned to the fleet pool.`,
+          message: `Request "${request_id}" was successfully cancelled. The vehicle has been returned to the Bogotá fleet pool.`,
           request_id: updated.id,
           service: updated.service,
           status: updated.status,
@@ -535,14 +609,14 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'pay',
-    'Finalize payment for a matched or completed request, recording the transaction and receipt confirmation code.',
+    'Finalize payment for a matched or completed request in Bogotá, recording the transaction and receipt confirmation code.',
     {
       session_id: z.string().describe('The session ID associated with the request'),
       request_id: z.string().describe('The request ID to pay for'),
       payment_confirmation: z
         .string()
         .optional()
-        .describe('Optional external payment confirmation token or transaction reference'),
+        .describe('Optional external payment confirmation token (e.g., "PSE-BOG-9921")'),
     },
     async ({
       session_id,
@@ -562,13 +636,13 @@ export function registerMcpTools(server: any): void {
 
         const formatted = {
           success: true,
-          message: `Payment of $${updated.price.toFixed(2)} USD successfully processed.`,
+          message: `Payment of $${updated.price.toLocaleString('es-CO')} COP successfully processed.`,
           request_id: updated.id,
           service: updated.service,
           status: updated.status,
           payment_status: updated.payment_status,
-          paid_amount_usd: updated.price,
-          formatted_amount: `$${updated.price.toFixed(2)} USD`,
+          paid_amount_cop: updated.price,
+          formatted_amount: `$${updated.price.toLocaleString('es-CO')} COP`,
           payment_confirmation: updated.payment_confirmation,
           paid_at: updated.paid_at,
         };
@@ -594,7 +668,7 @@ export function registerMcpTools(server: any): void {
 
 export function createLogisticsMcpServer(): McpServer {
   const server = new McpServer({
-    name: 'logistics-mcp',
+    name: 'uber-bogota-mcp',
     version: '1.0.0',
   });
 

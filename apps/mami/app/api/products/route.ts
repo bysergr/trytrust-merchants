@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listProducts, searchProducts, getCategories } from '@/lib/services/products';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -19,14 +26,17 @@ export async function GET(request: NextRequest) {
         limit,
       });
 
-      return NextResponse.json({
-        products,
-        total: products.length,
-        page: 1,
-        limit,
-        totalPages: 1,
-        categories,
-      });
+      return NextResponse.json(
+        {
+          products,
+          total: products.length,
+          page: 1,
+          limit,
+          totalPages: 1,
+          categories,
+        },
+        { headers: noCacheHeaders }
+      );
     }
 
     const result = listProducts({
@@ -36,12 +46,15 @@ export async function GET(request: NextRequest) {
       sortBy,
     });
 
-    return NextResponse.json({
-      ...result,
-      categories,
-    });
+    return NextResponse.json(
+      {
+        ...result,
+        categories,
+      },
+      { headers: noCacheHeaders }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch products';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500, headers: noCacheHeaders });
   }
 }

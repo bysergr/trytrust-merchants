@@ -14,6 +14,7 @@ import {
   Package,
   Truck,
 } from 'lucide-react';
+import { BrandLogo } from '@/components/BrandLogo';
 import { ServiceRequest } from '@/lib/types';
 
 interface RowEditState {
@@ -137,7 +138,7 @@ export default function AdminPage() {
       {/* Top Header */}
       <header className="border-b border-neutral-800 bg-black sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link
               href="/"
               className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors"
@@ -145,18 +146,17 @@ export default function AdminPage() {
               <ArrowLeft className="w-4 h-4" /> Back to App
             </Link>
             <span className="text-neutral-700">|</span>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-white">
-                Admin Dispatch & Pricing Portal
-              </h1>
-            </div>
+            <BrandLogo size="sm" showSubtitle={false} />
+            <span className="text-neutral-700 hidden sm:inline">|</span>
+            <h1 className="hidden sm:inline text-sm font-black tracking-tight text-neutral-300">
+              Admin Dispatch & Pricing Portal
+            </h1>
           </div>
 
           <button
             onClick={fetchAdminRequests}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-xs font-bold text-neutral-300 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-xs font-bold text-neutral-200 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} />
             Refresh
@@ -166,21 +166,21 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Loud Prototype Warning Banner */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-950/40 border border-amber-800/80 text-amber-200 flex items-start gap-3.5 shadow-xl">
+        <div className="p-5 rounded-3xl bg-amber-950/40 border border-amber-800/80 text-amber-200 flex items-start gap-3.5 shadow-2xl">
           <ShieldAlert className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs sm:text-sm space-y-1">
             <div className="font-extrabold text-amber-300 uppercase tracking-wide">
               ⚠️ PROTOTYPE ONLY: UNPROTECTED ADMIN ROUTE
             </div>
             <p className="text-amber-200/90 leading-relaxed">
-              This route is <strong>deliberately unauthenticated</strong> per hackathon & evaluation specifications. In a production deployment, this page and its underlying API endpoints (<code className="bg-amber-900/60 px-1 py-0.5 rounded font-mono text-xs">/api/admin/*</code>) must be strictly secured with multi-factor authentication, JWT/session guards, and role-based access control (RBAC).
+              This route is <strong>deliberately unauthenticated</strong> per hackathon & prototype instructions. In production, this portal and its underlying API endpoints (<code className="bg-amber-900/60 px-1 py-0.5 rounded font-mono text-xs">/api/admin/*</code>) must be strictly secured with role-based authentication.
             </p>
           </div>
         </div>
 
         {/* Global Error Banner */}
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-center gap-2.5">
+          <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -190,9 +190,9 @@ export default function AdminPage() {
         <div className="bg-black border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-5 border-b border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h2 className="text-lg font-black text-white">All Service Requests</h2>
+              <h2 className="text-lg font-black text-white">All Bogotá Service Requests</h2>
               <p className="text-xs text-neutral-400">
-                Directly edit <span className="text-emerald-400 font-bold">Price</span> and <span className="text-emerald-400 font-bold">Scheduled At</span> inline. Click Save to persist changes via <code className="text-neutral-300 font-mono text-[11px]">PATCH /api/admin/requests/:id</code>.
+                Directly edit <span className="text-emerald-400 font-bold">Price ($ COP)</span> and <span className="text-emerald-400 font-bold">Scheduled At</span> inline. Click Save to persist via <code className="text-neutral-300 font-mono text-[11px]">PATCH /api/admin/requests/:id</code>.
               </p>
             </div>
             <div className="text-xs font-mono text-neutral-400 bg-neutral-900 px-3 py-1.5 rounded-xl border border-neutral-800">
@@ -204,14 +204,14 @@ export default function AdminPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-neutral-900/90 text-neutral-400 uppercase text-[10px] font-extrabold tracking-wider border-b border-neutral-800">
-                  <th className="py-3 px-4">Request ID</th>
-                  <th className="py-3 px-4">Service</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 min-w-[140px]">Price ($ USD) [Editable]</th>
-                  <th className="py-3 px-4 min-w-[210px]">Scheduled At [Editable]</th>
-                  <th className="py-3 px-4 min-w-[200px]">Pickup</th>
-                  <th className="py-3 px-4 min-w-[200px]">Dropoff</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Request ID</th>
+                  <th className="py-3.5 px-4">Service</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Price ($ COP) [Editable]</th>
+                  <th className="py-3.5 px-4 min-w-[210px]">Scheduled At [Editable]</th>
+                  <th className="py-3.5 px-4 min-w-[220px]">Pickup Location</th>
+                  <th className="py-3.5 px-4 min-w-[220px]">Dropoff Location</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-900 text-neutral-200">
@@ -233,13 +233,13 @@ export default function AdminPage() {
                         className="hover:bg-neutral-900/50 transition-colors group"
                       >
                         {/* ID */}
-                        <td className="py-3.5 px-4 font-mono font-bold text-neutral-300">
+                        <td className="py-4 px-4 font-mono font-bold text-neutral-300">
                           {r.id}
                         </td>
 
                         {/* Service */}
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-neutral-900 border border-neutral-800 text-neutral-200">
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-neutral-900 border border-neutral-800 text-neutral-200">
                             {r.service === 'package' ? (
                               <Package className="w-3 h-3 text-emerald-400" />
                             ) : r.service === 'freight' ? (
@@ -252,9 +252,9 @@ export default function AdminPage() {
                         </td>
 
                         {/* Status */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <span
-                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
                               r.status === 'completed'
                                 ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                                 : r.status === 'cancelled'
@@ -268,48 +268,49 @@ export default function AdminPage() {
                           </span>
                         </td>
 
-                        {/* Price (Editable) */}
-                        <td className="py-3.5 px-4">
+                        {/* Price (Editable in COP) */}
+                        <td className="py-4 px-4">
                           <div className="flex items-center gap-1.5">
                             <span className="text-neutral-500 font-bold">$</span>
                             <input
                               type="number"
-                              step="0.01"
+                              step="100"
                               min="0"
                               value={edit.price}
                               onChange={(e) => handleFieldChange(r.id, 'price', e.target.value)}
-                              className="w-24 px-2 py-1 bg-neutral-900 border border-neutral-700 rounded-lg text-white font-bold text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                              className="w-28 px-2.5 py-1 bg-neutral-900 border border-neutral-700 rounded-xl text-white font-black text-xs focus:outline-none focus:border-emerald-500"
                             />
+                            <span className="text-[10px] text-neutral-500 font-mono">COP</span>
                           </div>
                         </td>
 
                         {/* Scheduled At (Editable) */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <input
                             type="datetime-local"
                             value={edit.scheduled_at}
                             onChange={(e) => handleFieldChange(r.id, 'scheduled_at', e.target.value)}
-                            className="px-2 py-1 bg-neutral-900 border border-neutral-700 rounded-lg text-neutral-200 text-xs focus:outline-none focus:border-emerald-500"
+                            className="px-2.5 py-1 bg-neutral-900 border border-neutral-700 rounded-xl text-neutral-200 text-xs focus:outline-none focus:border-emerald-500"
                           />
                         </td>
 
                         {/* Pickup */}
-                        <td className="py-3.5 px-4 text-neutral-300 max-w-xs truncate" title={r.pickup_address}>
+                        <td className="py-4 px-4 text-neutral-300 max-w-xs truncate" title={r.pickup_address}>
                           {r.pickup_address}
                         </td>
 
                         {/* Dropoff */}
-                        <td className="py-3.5 px-4 text-neutral-300 max-w-xs truncate" title={r.dropoff_address}>
+                        <td className="py-4 px-4 text-neutral-300 max-w-xs truncate" title={r.dropoff_address}>
                           {r.dropoff_address}
                         </td>
 
                         {/* Action Buttons */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-4 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleSaveRow(r.id)}
                               disabled={isSaving}
-                              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all ${
+                              className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all ${
                                 isSaved
                                   ? 'bg-emerald-500 text-black'
                                   : 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 hover:border-neutral-600'

@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { createMcpHandler } from 'mcp-handler';
 import { registerMcpTools } from '@/lib/mcp/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const baseHandler = createMcpHandler(
   async (server) => {
     registerMcpTools(server);
@@ -19,6 +22,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Mcp-Session-Id, x-mcp-session-id',
   'Access-Control-Max-Age': '86400',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
 };
 
 async function handleMcpRequest(req: NextRequest): Promise<Response> {

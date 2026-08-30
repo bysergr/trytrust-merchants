@@ -37,8 +37,8 @@ async function runRaceConditionTest() {
         const req = createRideRequest(
           {
             vehicle_type_id: testVehicleTypeId,
-            pickup_address: '1 Market St, San Francisco, CA',
-            dropoff_address: 'SFO Airport Terminal 1',
+            pickup_address: 'Parque de la 93, Chicó, Bogotá',
+            dropoff_address: 'Aeropuerto Internacional El Dorado',
           },
           session1
         );
@@ -52,8 +52,8 @@ async function runRaceConditionTest() {
         const req = createRideRequest(
           {
             vehicle_type_id: testVehicleTypeId,
-            pickup_address: '500 Howard St, San Francisco, CA',
-            dropoff_address: 'SFO Airport Terminal 2',
+            pickup_address: 'Zona T, Calle 82 # 12-35, Bogotá',
+            dropoff_address: 'Aeropuerto Internacional El Dorado',
           },
           session2
         );
@@ -94,8 +94,8 @@ async function runRaceConditionTest() {
     createRideRequest(
       {
         vehicle_type_id: testVehicleTypeId,
-        pickup_address: '700 Mission St, San Francisco, CA',
-        dropoff_address: 'SFO Airport Terminal 3',
+        pickup_address: 'Torre Colpatria, Bogotá',
+        dropoff_address: 'Unicentro Bogotá',
       },
       generateSessionId()
     );

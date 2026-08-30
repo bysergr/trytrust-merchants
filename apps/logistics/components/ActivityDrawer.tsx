@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Car, Package, Truck, ArrowRight, Clock, X } from 'lucide-react';
+import { formatCopCurrency } from './VehicleCard';
 import { ServiceRequest } from '@/lib/types';
 
 interface ActivityDrawerProps {
@@ -15,16 +16,16 @@ export function ActivityDrawer({ requests, isOpen, onClose, onSelectRequest }: A
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/70 backdrop-blur-sm flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/75 backdrop-blur-sm flex justify-end">
       <div className="w-full max-w-md bg-neutral-950 border-l border-neutral-800 h-full flex flex-col shadow-2xl p-6 overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
           <div>
-            <h3 className="text-xl font-black text-white">Your Activity</h3>
+            <h3 className="text-xl font-black text-white">Your Bogotá Trips</h3>
             <p className="text-xs text-neutral-400">Current session requests & bookings</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-white transition-colors"
+            className="p-2 rounded-2xl bg-neutral-900 text-neutral-400 hover:text-white transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -44,21 +45,21 @@ export function ActivityDrawer({ requests, isOpen, onClose, onSelectRequest }: A
                   onSelectRequest(r.id);
                   onClose();
                 }}
-                className="p-4 rounded-2xl bg-neutral-900/80 hover:bg-neutral-900 border border-neutral-800 hover:border-emerald-500/60 cursor-pointer transition-all flex flex-col justify-between gap-3 group"
+                className="p-4 rounded-3xl bg-neutral-900/80 hover:bg-neutral-900 border border-neutral-800 hover:border-white cursor-pointer transition-all flex flex-col justify-between gap-3 group shadow-lg"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-emerald-400">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-black border border-neutral-800 flex items-center justify-center text-white">
                       {r.service === 'package' ? (
-                        <Package className="w-4 h-4" />
+                        <Package className="w-4 h-4 text-emerald-400" />
                       ) : r.service === 'freight' ? (
-                        <Truck className="w-4 h-4" />
+                        <Truck className="w-4 h-4 text-emerald-400" />
                       ) : (
-                        <Car className="w-4 h-4" />
+                        <Car className="w-4 h-4 text-emerald-400" />
                       )}
                     </div>
                     <div>
-                      <h4 className="text-white font-bold text-sm">{r.vehicle_type_name || r.service}</h4>
+                      <h4 className="text-white font-extrabold text-sm">{r.vehicle_type_name || r.service}</h4>
                       <span className="text-[10px] text-neutral-400 font-mono">
                         {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
@@ -66,9 +67,9 @@ export function ActivityDrawer({ requests, isOpen, onClose, onSelectRequest }: A
                   </div>
 
                   <div className="text-right">
-                    <div className="text-sm font-black text-white">${r.price.toFixed(2)}</div>
+                    <div className="text-sm font-black text-white">{formatCopCurrency(r.price)}</div>
                     <span
-                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
                         r.status === 'completed'
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                           : r.status === 'cancelled'

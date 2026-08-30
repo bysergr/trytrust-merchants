@@ -79,7 +79,9 @@ export default function StorePage() {
         }
         params.append('limit', '50');
 
-        const response = await fetch(`/api/products?${params.toString()}`);
+        const response = await fetch(`/api/products?${params.toString()}`, {
+          cache: 'no-store',
+        });
         if (!response.ok) {
           throw new Error(`Failed to load products (${response.status})`);
         }
@@ -117,7 +119,7 @@ export default function StorePage() {
     async function loadCart() {
       try {
         setIsLoadingCart(true);
-        const response = await fetch('/api/cart');
+        const response = await fetch('/api/cart', { cache: 'no-store' });
         if (response.ok && isMounted) {
           const data = await response.json();
           setCart(data);
@@ -144,6 +146,7 @@ export default function StorePage() {
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({
           productId: product.id,
           quantity,
@@ -185,6 +188,7 @@ export default function StorePage() {
       const response = await fetch('/api/cart', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({
           productId,
           quantity: Math.abs(diff),
@@ -204,6 +208,7 @@ export default function StorePage() {
     const response = await fetch('/api/cart', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
       body: JSON.stringify({
         productId,
       }),
@@ -222,6 +227,7 @@ export default function StorePage() {
     const response = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
       body: JSON.stringify({
         deliveryAddress: address,
       }),

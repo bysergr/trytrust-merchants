@@ -12,23 +12,23 @@ import {
 import { calculateQuote, estimateCoordinates } from './geo-pricing';
 import { getVehicleTypeById } from './vehicles';
 
-// Simulated realistic driver profiles for authentic Uber feel
+// Simulated realistic driver profiles for authentic Bogotá Uber feel
 const SIMULATED_DRIVERS: Record<ServiceType, Array<{ name: string; plate: string; rating: number }>> = {
   ride: [
-    { name: 'Marcus Vance', plate: '7XYZ890 (Silver Camry)', rating: 4.95 },
-    { name: 'Sarah Chen', plate: '8KLM234 (Black Tesla Model 3)', rating: 4.98 },
-    { name: 'Darnell Washington', plate: '6ABC789 (Blue Accord)', rating: 4.92 },
-    { name: 'Mateo Morales', plate: '9DEF512 (White Highlander)', rating: 4.96 },
+    { name: 'Santiago Ramirez', plate: 'GHT-812 (Gris Chevrolet Onix)', rating: 4.96 },
+    { name: 'Valentina Restrepo', plate: 'KLP-349 (Blanco Renault Logan)', rating: 4.98 },
+    { name: 'Mauricio Gomez', plate: 'WNZ-520 (Plata Mazda 3)', rating: 4.94 },
+    { name: 'Daniela Hernandez', plate: 'FJK-904 (Negro Toyota Corolla Cross)', rating: 4.97 },
   ],
   package: [
-    { name: 'Elena Rostova', plate: 'MOTO-4421 (Yamaha QuickCourier)', rating: 4.97 },
-    { name: 'Carlos Mendez', plate: 'MOTO-8819 (Honda TransCity)', rating: 4.94 },
-    { name: 'Andre Dubois', plate: 'VAN-2041 (Ford Transit Express)', rating: 4.91 },
+    { name: 'Andres Felipe Ospina', plate: 'MOTO-XYZ-45D (Yamaha FZ 250)', rating: 4.98 },
+    { name: 'Carlos Mario Buitrago', plate: 'MOTO-RTK-88E (Bajaj Pulsar NS)', rating: 4.95 },
+    { name: 'Javier Cardenas', plate: 'VAN-EQP-102 (Renault Master Flash)', rating: 4.92 },
   ],
   freight: [
-    { name: 'David K. O\'Connor', plate: 'CA-COM-9912 (Freightliner 16ft)', rating: 4.92 },
-    { name: 'James "Mac" Brody', plate: 'TRK-4480 (Peterbilt Heavy Haul)', rating: 4.89 },
-    { name: 'Artur Kowalski', plate: 'VAN-7731 (Sprinter Cargo Pro)', rating: 4.96 },
+    { name: 'Hector Jaime Morales', plate: 'WDF-901 (Camión Hino 300)', rating: 4.93 },
+    { name: 'Gustavo Adolfo Pardo', plate: 'TTR-440 (Chevrolet FVR Turbo)', rating: 4.91 },
+    { name: 'Alvaro Jose Bernal', plate: 'SPR-773 (Mercedes Sprinter Carga)', rating: 4.96 },
   ],
 };
 

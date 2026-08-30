@@ -29,59 +29,59 @@ async function testAllMcpTools() {
   console.log('   ✅ Tool 1 passed\n');
 
   // 2. get_quote
-  console.log('2️⃣ Testing tool 2: get_quote...');
+  console.log('2️⃣ Testing tool 2: get_quote (Bogotá)...');
   const quote = calculateQuote({
     service: 'ride',
     vehicle_type_id: rideVehicles[0].id,
-    pickup_address: '100 Market St, San Francisco, CA',
-    dropoff_address: 'Pier 39, San Francisco, CA',
+    pickup_address: 'Parque de la 93, Chicó, Bogotá',
+    dropoff_address: 'Aeropuerto Internacional El Dorado, Terminal 1',
   });
-  console.log(`   - Quote total price: $${quote.total_price.toFixed(2)} USD`);
+  console.log(`   - Quote total price: $${quote.total_price.toLocaleString('es-CO')} COP (~$${(quote.total_price / 4000).toFixed(2)} USD)`);
   console.log(`   - Distance: ${quote.distance_km} km, Duration: ${quote.duration_minutes} min`);
   console.log('   ✅ Tool 2 passed\n');
 
   // 3. request_ride
-  console.log('3️⃣ Testing tool 3: request_ride...');
+  console.log('3️⃣ Testing tool 3: request_ride (Bogotá)...');
   const rideReq = createRideRequest(
     {
       vehicle_type_id: 'ride-economy',
-      pickup_address: '100 Market St, San Francisco, CA',
-      dropoff_address: 'SFO International Airport, Terminal 2',
+      pickup_address: 'Parque de la 93, Chicó, Bogotá',
+      dropoff_address: 'Aeropuerto Internacional El Dorado, Terminal 1',
     },
     sessionId
   );
-  console.log(`   - Ride created: ${rideReq.id}, status: ${rideReq.status}, price: $${rideReq.price}`);
+  console.log(`   - Ride created: ${rideReq.id}, status: ${rideReq.status}, price: $${rideReq.price.toLocaleString('es-CO')} COP`);
   console.log(`   - Driver assigned: ${rideReq.driver_name} (${rideReq.driver_plate})`);
   console.log('   ✅ Tool 3 passed\n');
 
   // 4. request_package_delivery
-  console.log('4️⃣ Testing tool 4: request_package_delivery...');
+  console.log('4️⃣ Testing tool 4: request_package_delivery (Uber Flash Bogotá)...');
   const pkgReq = createPackageRequest(
     {
       vehicle_type_id: 'pkg-motorcycle',
-      pickup_address: '450 Mission St, San Francisco, CA',
-      dropoff_address: '800 Townsend St, San Francisco, CA',
-      package_description: 'Confidential legal contracts envelope',
-      package_weight_kg: 1.2,
+      pickup_address: 'Torre Colpatria, Centro Internacional, Bogotá',
+      dropoff_address: 'Zona T, Calle 82 # 12-35, Bogotá',
+      package_description: 'Documentos notariales y contratos corporativos',
+      package_weight_kg: 1.5,
     },
     sessionId
   );
-  console.log(`   - Package req created: ${pkgReq.id}, status: ${pkgReq.status}, price: $${pkgReq.price}`);
+  console.log(`   - Package req created: ${pkgReq.id}, status: ${pkgReq.status}, price: $${pkgReq.price.toLocaleString('es-CO')} COP`);
   console.log('   ✅ Tool 4 passed\n');
 
   // 5. request_freight
-  console.log('5️⃣ Testing tool 5: request_freight...');
+  console.log('5️⃣ Testing tool 5: request_freight (Bogotá Carga)...');
   const freightReq = createFreightRequest(
     {
       vehicle_type_id: 'freight-box-truck',
-      pickup_address: 'Port of Oakland Terminal 4',
-      dropoff_address: 'San Jose Distribution Warehouse B',
-      cargo_description: '3 wooden pallets of industrial pump valves',
-      cargo_weight_kg: 1200,
+      pickup_address: 'Zona Franca Fontibón, Calle 13, Bogotá',
+      dropoff_address: 'Parque Industrial Siberia, Cota - Bogotá',
+      cargo_description: '3 estibas con equipos de refrigeración industrial',
+      cargo_weight_kg: 1950,
     },
     sessionId
   );
-  console.log(`   - Freight req created: ${freightReq.id}, status: ${freightReq.status}, price: $${freightReq.price}`);
+  console.log(`   - Freight req created: ${freightReq.id}, status: ${freightReq.status}, price: $${freightReq.price.toLocaleString('es-CO')} COP`);
   console.log('   ✅ Tool 5 passed\n');
 
   // 6. track_request

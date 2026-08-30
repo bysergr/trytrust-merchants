@@ -1,27 +1,36 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, ArrowRight, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { Calendar, ArrowRight, Loader2, AlertCircle, Sparkles, ArrowUpDown } from 'lucide-react';
 import { MapSimulator } from './MapSimulator';
-import { VehicleCard } from './VehicleCard';
+import { VehicleCard, formatCopCurrency } from './VehicleCard';
 import { QuoteResult, ServiceRequest, VehicleType } from '@/lib/types';
+import { estimateClientCoordinates } from '@/lib/client-geo';
 
 interface RideBookingViewProps {
   onSuccess: (request: ServiceRequest) => void;
 }
 
-const PRESET_ROUTES = [
-  { label: 'Downtown to Pier 39', pickup: 'Market St & 4th St, San Francisco, CA', dropoff: 'Pier 39, Fisherman\'s Wharf, SF' },
-  { label: 'Financial District to SFO Airport', pickup: '100 Montgomery St, Financial District, SF', dropoff: 'SFO International Airport, Terminal 2' },
-  { label: 'Mission District to Golden Gate', pickup: 'Valencia St & 18th St, Mission, SF', dropoff: 'Golden Gate Bridge Welcome Center, SF' },
+const BOGOTA_QUICK_SUGGESTIONS = [
+  { address: 'Parque de la 93, Chicó, Bogotá', label: 'Parque de la 93', tag: 'Chicó' },
+  { address: 'Aeropuerto Internacional El Dorado, Terminal 1', label: 'Aeropuerto El Dorado', tag: 'Airport' },
+  { address: 'Torre Colpatria, Centro Internacional, Bogotá', label: 'Torre Colpatria', tag: 'Centro' },
+  { address: 'Zona T, Calle 82 # 12-35, Bogotá', label: 'Zona T / Andino', tag: 'Zona Rosa' },
+  { address: 'Unicentro Bogotá, Avenida 15 # 124-30', label: 'Unicentro Bogotá', tag: 'Usaquén' },
+  { address: 'Calle 140 # 11-45, Cedritos, Bogotá', label: 'Cedritos (Calle 140)', tag: 'Norte' },
+  { address: 'Calle 72 con Carrera 7, Bogotá', label: 'Distrito Financiero (Cl 72)', tag: 'Financiero' },
+  { address: 'Corferias Bogotá, Carrera 37 # 24-67', label: 'Corferias', tag: 'Salitre' },
 ];
 
 export function RideBookingView({ onSuccess }: RideBookingViewProps) {
-  const [pickup, setPickup] = useState('Market St & 4th St, San Francisco, CA');
-  const [dropoff, setDropoff] = useState('Pier 39, Fisherman\'s Wharf, SF');
+  const [pickup, setPickup] = useState('Parque de la 93, Chicó, Bogotá');
+  const [dropoff, setDropoff] = useState('Aeropuerto Internacional El Dorado, Terminal 1');
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number }>({ lat: 4.6768, lng: -74.0536 });
+  const [dropoffCoords, setDropoffCoords] = useState<{ lat: number; lng: number }>({ lat: 4.7016, lng: -74.1469 });
   const [scheduledAt, setScheduledAt] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState('ride-economy');
 
+  const [activeInputFocus, setActiveInputFocus] = useState<'pickup' | 'dropoff' | null>(null);
   const [vehicles, setVehicles] = useState<Array<VehicleType & { count_available: number }>>([]);
   const [quotes, setQuotes] = useState<Record<string, QuoteResult>>({});
   const [loadingVehicles, setLoadingVehicles] = useState(true);
@@ -49,7 +58,41 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
     loadVehicles();
   }, []);
 
-  // Fetch upfront quotes whenever pickup or dropoff changes
+  // Update estimated coordinates when typing addresses
+  const handlePickupChange = (val: string) => {
+    setPickup(val);
+    const estimated = estimateClientCoordinates(val);
+    setPickupCoords(estimated);
+  };
+
+  const handleDropoffChange = (val: string) => {
+    setDropoff(val);
+    const estimated = estimateClientCoordinates(val);
+    setDropoffCoords(estimated);
+  };
+
+  // Swap pickup & dropoff
+  const handleSwapAddresses = () => {
+    const tempP = pickup;
+    const tempCoordsP = pickupCoords;
+    setPickup(dropoff);
+    setPickupCoords(dropoffCoords);
+    setDropoff(tempP);
+    setDropoffCoords(tempCoordsP);
+  };
+
+  // Handle map click to set custom location
+  const handleMapClick = (type: 'pickup' | 'dropoff', coords: { lat: number; lng: number }, address: string) => {
+    if (type === 'pickup') {
+      setPickup(address);
+      setPickupCoords(coords);
+    } else {
+      setDropoff(address);
+      setDropoffCoords(coords);
+    }
+  };
+
+  // Fetch upfront quotes whenever addresses or coordinates change
   useEffect(() => {
     if (!pickup.trim() || !dropoff.trim() || vehicles.length === 0) return;
 
@@ -70,6 +113,10 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
                 vehicle_type_id: v.id,
                 pickup_address: pickup,
                 dropoff_address: dropoff,
+                pickup_lat: pickupCoords.lat,
+                pickup_lng: pickupCoords.lng,
+                dropoff_lat: dropoffCoords.lat,
+                dropoff_lng: dropoffCoords.lng,
                 scheduled_at: scheduledAt || null,
               }),
             });
@@ -89,12 +136,12 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
       }
     }
 
-    const timer = setTimeout(fetchQuotes, 300);
+    const timer = setTimeout(fetchQuotes, 250);
     return () => {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [pickup, dropoff, scheduledAt, vehicles]);
+  }, [pickup, dropoff, pickupCoords, dropoffCoords, scheduledAt, vehicles]);
 
   // Handle ride request submission
   async function handleSubmitRide(e: React.FormEvent) {
@@ -112,6 +159,10 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
           vehicle_type_id: selectedVehicleId,
           pickup_address: pickup,
           dropoff_address: dropoff,
+          pickup_lat: pickupCoords.lat,
+          pickup_lng: pickupCoords.lng,
+          dropoff_lat: dropoffCoords.lat,
+          dropoff_lng: dropoffCoords.lng,
           scheduled_at: scheduledAt || null,
         }),
       });
@@ -133,115 +184,131 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-4rem)]">
-      {/* Left Column: Booking Drawer / Form (5 cols on lg) */}
+      {/* Left Column: Booking Drawer (5 cols on lg) */}
       <div className="lg:col-span-5 bg-black border-r border-neutral-800 p-4 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto">
         <div>
           {/* Header */}
-          <div className="mb-6">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-950/70 border border-emerald-800/80 px-2.5 py-1 rounded-full">
-              Uber Passenger Mobility
+          <div className="mb-5">
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1 rounded-full">
+              Bogotá Passenger Mobility
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2">
-              Request a Ride
+              Request a Custom Ride
             </h2>
             <p className="text-neutral-400 text-xs sm:text-sm mt-1">
-              Select pickup, destination, and ride tier with live guaranteed price matching.
+              Type any custom address, pick from live suggestions, or click directly on the map.
             </p>
           </div>
 
-          {/* Quick Presets */}
-          <div className="mb-5">
-            <div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-emerald-400" />
-              Popular Destinations
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESET_ROUTES.map((p, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setPickup(p.pickup);
-                    setDropoff(p.dropoff);
-                  }}
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <form onSubmit={handleSubmitRide} className="space-y-4">
-            {/* Pickup & Dropoff Inputs with Route Line */}
-            <div className="relative bg-neutral-950 border border-neutral-800 rounded-2xl p-3.5 space-y-3">
-              {/* Pickup */}
-              <div className="flex items-center gap-3">
+            {/* Custom Pickup & Dropoff Inputs with Route Line & Swap Button */}
+            <div className="relative bg-neutral-950 border border-neutral-800 rounded-3xl p-4 space-y-3 shadow-2xl">
+              {/* Swap Button */}
+              <button
+                type="button"
+                onClick={handleSwapAddresses}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-neutral-900 border border-neutral-700 hover:border-white text-neutral-300 hover:text-white flex items-center justify-center transition-all shadow-md"
+                title="Swap pickup and destination"
+              >
+                <ArrowUpDown className="w-4 h-4" />
+              </button>
+
+              {/* Pickup Input */}
+              <div className="flex items-center gap-3.5 pr-10">
                 <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                    Pickup Location
+                  <label className="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                    Custom Pickup (Punto de Partida)
                   </label>
                   <input
                     type="text"
                     required
                     value={pickup}
-                    onChange={(e) => setPickup(e.target.value)}
-                    placeholder="Enter pickup address"
-                    className="w-full bg-transparent text-sm font-semibold text-white placeholder-neutral-600 focus:outline-none"
+                    onFocus={() => setActiveInputFocus('pickup')}
+                    onChange={(e) => handlePickupChange(e.target.value)}
+                    placeholder="Type any custom street, carrera, or landmark..."
+                    className="w-full bg-transparent text-sm font-bold text-white placeholder-neutral-600 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Separator Divider with Dot Connector */}
+              {/* Divider */}
               <div className="border-t border-neutral-800 ml-9" />
 
-              {/* Dropoff */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-lg bg-neutral-800 border border-neutral-600 flex items-center justify-center flex-shrink-0">
-                  <div className="w-2 h-2 bg-white" />
+              {/* Dropoff Input */}
+              <div className="flex items-center gap-3.5 pr-10">
+                <div className="w-6 h-6 rounded-lg bg-white border border-neutral-400 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 bg-black rounded-sm" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                    Destination
+                  <label className="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                    Custom Destination (Destino)
                   </label>
                   <input
                     type="text"
                     required
                     value={dropoff}
-                    onChange={(e) => setDropoff(e.target.value)}
-                    placeholder="Where to?"
-                    className="w-full bg-transparent text-sm font-semibold text-white placeholder-neutral-600 focus:outline-none"
+                    onFocus={() => setActiveInputFocus('dropoff')}
+                    onChange={(e) => handleDropoffChange(e.target.value)}
+                    placeholder="Where to in Bogotá? Type any address..."
+                    className="w-full bg-transparent text-sm font-bold text-white placeholder-neutral-600 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Optional Schedule Pickup */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-neutral-300">
-                <Calendar className="w-4 h-4 text-neutral-400" />
-                <span>Schedule for later (Optional)</span>
+            {/* Quick Suggestions & Chips */}
+            <div>
+              <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                Bogotá Suggestions & Corridors
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                {BOGOTA_QUICK_SUGGESTIONS.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      if (activeInputFocus === 'dropoff') {
+                        handleDropoffChange(item.address);
+                      } else {
+                        handlePickupChange(item.address);
+                      }
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-600 transition-colors flex items-center gap-1.5"
+                  >
+                    <span>{item.label}</span>
+                    <span className="text-[10px] text-neutral-500 font-mono">({item.tag})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Schedule Option */}
+            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
+                <Calendar className="w-4 h-4 text-emerald-400" />
+                <span>Schedule Ride (Programar Viaje)</span>
               </div>
               <input
                 type="datetime-local"
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}
-                className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
+                className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* Vehicle Tier Picker */}
+            {/* Vehicle Tier Selector */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  Select Ride Option
+                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                  Select Bogotá Vehicle Tier
                 </h3>
                 {loadingQuote && (
-                  <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Updating quotes...
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-bold">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Calculating COP fares...
                   </span>
                 )}
               </div>
@@ -269,35 +336,36 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
 
             {/* Error banner */}
             {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-start gap-2.5">
+              <div className="p-4 rounded-2xl bg-red-950/90 border border-red-800 text-red-200 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <strong className="font-bold">Matching Error: </strong>
+                  <strong className="font-bold">Dispatch Error: </strong>
                   {errorMessage}
                 </div>
               </div>
             )}
 
-            {/* Quote Summary breakdown */}
+            {/* Price breakdown */}
             {selectedQuote && (
-              <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3.5 space-y-1.5 text-xs text-neutral-300">
-                <div className="flex justify-between font-medium">
-                  <span className="text-neutral-400">Estimated distance:</span>
-                  <span className="text-white">{selectedQuote.distance_km} km</span>
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 space-y-2 text-xs text-neutral-300 shadow-xl">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Calculated route:</span>
+                  <span className="text-white font-bold">{selectedQuote.distance_km} km ({selectedQuote.duration_minutes} mins)</span>
                 </div>
-                <div className="flex justify-between font-medium">
-                  <span className="text-neutral-400">Estimated trip duration:</span>
-                  <span className="text-white">{selectedQuote.duration_minutes} minutes</span>
-                </div>
-                <div className="flex justify-between font-medium">
+                <div className="flex justify-between">
                   <span className="text-neutral-400">Base fare:</span>
-                  <span className="text-white">${selectedQuote.base_fare.toFixed(2)}</span>
+                  <span className="text-white font-mono">{formatCopCurrency(selectedQuote.base_fare)}</span>
                 </div>
-                <div className="border-t border-neutral-800 pt-1.5 flex justify-between font-bold text-sm text-white">
-                  <span>Total Fare:</span>
-                  <span className="text-emerald-400 font-black text-base">
-                    ${selectedQuote.total_price.toFixed(2)} USD
-                  </span>
+                <div className="border-t border-neutral-800 pt-2 flex justify-between font-black text-sm text-white">
+                  <span>Guaranteed Price:</span>
+                  <div className="text-right">
+                    <span className="text-emerald-400 font-black text-lg block">
+                      {formatCopCurrency(selectedQuote.total_price)}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-normal">
+                      ~${(selectedQuote.total_price / 4000).toFixed(2)} USD
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -306,12 +374,12 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
             <button
               type="submit"
               disabled={submitting || loadingVehicles || !selectedVehicleId}
-              className="w-full py-4 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-base tracking-tight shadow-xl hover:shadow-[0_0_25px_rgba(6,193,103,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 rounded-2xl bg-white hover:bg-neutral-200 text-black font-black text-base tracking-tight shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Matching Nearby Driver...
+                  <Loader2 className="w-5 h-5 animate-spin text-black" />
+                  Matching Nearby Bogotá Driver...
                 </>
               ) : (
                 <>
@@ -324,13 +392,16 @@ export function RideBookingView({ onSuccess }: RideBookingViewProps) {
         </div>
       </div>
 
-      {/* Right Column: Live Map Simulator (7 cols on lg) */}
+      {/* Right Column: Live Map Simulator with Interactive Click-to-Pin */}
       <div className="lg:col-span-7 h-full min-h-[400px] lg:min-h-full">
         <MapSimulator
           service="ride"
           pickupAddress={pickup}
           dropoffAddress={dropoff}
+          pickupCoords={pickupCoords}
+          dropoffCoords={dropoffCoords}
           etaMinutes={selectedQuote?.duration_minutes || 6}
+          onMapClickLocation={handleMapClick}
         />
       </div>
     </div>

@@ -89,11 +89,16 @@ export function getBookingBySession(sessionId: string): BookingDetail | null {
 }
 
 export function executePayment(params: PayParams): PayResult {
-  const { booking_session_id, passenger_name, passenger_document_id, contact_email } = params;
+  const {
+    booking_session_id,
+    flight_id,
+    seat_number,
+    seat_numbers,
+    passenger_name,
+    passenger_document_id,
+    contact_email,
+  } = params;
 
-  if (!booking_session_id) {
-    throw new Error('Booking session ID is required.');
-  }
   if (!passenger_name || !passenger_name.trim()) {
     throw new Error('Passenger name is required.');
   }
@@ -102,6 +107,31 @@ export function executePayment(params: PayParams): PayResult {
   }
   if (!contact_email || !contact_email.trim() || !contact_email.includes('@')) {
     throw new Error('A valid contact email address is required.');
+  }
+
+  const normalizedSessionId = booking_session_id?.trim();
+  const normalizedFlightId = flight_id?.trim();
+
+  // Collect direct seat numbers if provided
+  const directSeatNumbers: string[] = [];
+  if (seat_number && typeof seat_number === 'string' && seat_number.trim()) {
+    directSeatNumbers.push(seat_number.trim().toUpperCase());
+  }
+  if (seat_numbers && Array.isArray(seat_numbers)) {
+    for (const sn of seat_numbers) {
+      if (typeof sn === 'string' && sn.trim()) {
+        const norm = sn.trim().toUpperCase();
+        if (!directSeatNumbers.includes(norm)) {
+          directSeatNumbers.push(norm);
+        }
+      }
+    }
+  }
+
+  if (!normalizedSessionId && (!normalizedFlightId || directSeatNumbers.length === 0)) {
+    throw new Error(
+      'Either booking_session_id (with held seats) or flight_id and seat_number must be provided.'
+    );
   }
 
   const db = getDatabase();
@@ -114,136 +144,310 @@ export function executePayment(params: PayParams): PayResult {
     const now = new Date();
     const nowIso = now.toISOString();
 
-    // 2. Fetch booking
-    const bookingStmt = db.prepare(`
-      SELECT 
-        b.id,
-        b.booking_session_id,
-        b.flight_id,
-        b.status,
-        b.total_price,
-        f.flight_number,
-        f.origin_airport_code AS origin,
-        orig.city AS origin_city,
-        f.destination_airport_code AS destination,
-        dest.city AS destination_city,
-        f.departure_at,
-        f.arrival_at,
-        f.aircraft_type
-      FROM bookings b
-      JOIN flights f ON b.flight_id = f.id
-      JOIN airports orig ON f.origin_airport_code = orig.code
-      JOIN airports dest ON f.destination_airport_code = dest.code
-      WHERE b.booking_session_id = ?
-    `);
+    // 2. Check if an active session exists with held seats
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const booking = bookingStmt.get(booking_session_id) as any;
+    let heldBooking: any = null;
+    let heldSeats: Seat[] = [];
 
-    if (!booking) {
-      throw new Error(`No booking session found for ID '${booking_session_id}'. Please select seats first.`);
-    }
+    if (normalizedSessionId) {
+      const bookingStmt = db.prepare(`
+        SELECT 
+          b.id,
+          b.booking_session_id,
+          b.flight_id,
+          b.status,
+          b.total_price,
+          f.flight_number,
+          f.origin_airport_code AS origin,
+          orig.city AS origin_city,
+          f.destination_airport_code AS destination,
+          dest.city AS destination_city,
+          f.departure_at,
+          f.arrival_at,
+          f.aircraft_type
+        FROM bookings b
+        JOIN flights f ON b.flight_id = f.id
+        JOIN airports orig ON f.origin_airport_code = orig.code
+        JOIN airports dest ON f.destination_airport_code = dest.code
+        WHERE b.booking_session_id = ?
+      `);
+      heldBooking = bookingStmt.get(normalizedSessionId);
 
-    if (booking.status === 'confirmed') {
-      throw new Error('This booking has already been paid and confirmed.');
-    }
+      if (heldBooking) {
+        if (heldBooking.status === 'confirmed') {
+          throw new Error('This booking has already been paid and confirmed.');
+        }
 
-    // 3. Fetch held seats
-    const seatsStmt = db.prepare(`
-      SELECT s.id, s.seat_number, s.cabin_class, s.status, s.held_until, s.version, s.price
-      FROM seats s
-      JOIN booking_seats bs ON s.id = bs.seat_id
-      WHERE bs.booking_id = ?
-    `);
-    const seats = seatsStmt.all(booking.id) as Seat[];
-
-    if (seats.length === 0) {
-      throw new Error('No seats are currently selected or held for this booking. Please select seats before checkout.');
-    }
-
-    // 4. Validate that all held seats are active and unexpired
-    for (const seat of seats) {
-      const isExpired = seat.held_until && new Date(seat.held_until).getTime() <= now.getTime();
-      if (seat.status !== 'held' || isExpired) {
-        throw new Error(
-          `Hold on seat '${seat.seat_number}' has expired. Please return to seat selection and choose your seats again.`
-        );
+        const seatsStmt = db.prepare(`
+          SELECT s.id, s.flight_id, s.seat_number, s.cabin_class, s.status, s.held_until, s.version, s.price
+          FROM seats s
+          JOIN booking_seats bs ON s.id = bs.seat_id
+          WHERE bs.booking_id = ?
+          ORDER BY s.seat_number ASC
+        `);
+        heldSeats = seatsStmt.all(heldBooking.id) as Seat[];
       }
     }
 
-    // 5. Convert seats from 'held' to 'booked' atomically
-    const updateSeatStmt = db.prepare(`
-      UPDATE seats
-      SET status = 'booked',
-          held_until = NULL,
-          version = version + 1
-      WHERE id = ?
-        AND status = 'held'
-    `);
-
-    for (const seat of seats) {
-      const updateResult = updateSeatStmt.run(seat.id);
-      if (updateResult.changes === 0) {
-        throw new Error(
-          `Unable to finalize seat '${seat.seat_number}'. Seat status was modified concurrently.`
-        );
+    // Branch A: Process payment on existing held seats in booking session
+    if (heldBooking && heldSeats.length > 0) {
+      // Validate that all held seats are active and unexpired
+      for (const seat of heldSeats) {
+        const isExpired = seat.held_until && new Date(seat.held_until).getTime() <= now.getTime();
+        if (seat.status !== 'held' || isExpired) {
+          throw new Error(
+            `Hold on seat '${seat.seat_number}' has expired. Please return to seat selection and choose your seats again.`
+          );
+        }
       }
+
+      // Convert seats from 'held' to 'booked' atomically
+      const updateSeatStmt = db.prepare(`
+        UPDATE seats
+        SET status = 'booked',
+            held_until = NULL,
+            version = version + 1
+        WHERE id = ?
+          AND status = 'held'
+      `);
+
+      for (const seat of heldSeats) {
+        const updateResult = updateSeatStmt.run(seat.id);
+        if (updateResult.changes === 0) {
+          throw new Error(
+            `Unable to finalize seat '${seat.seat_number}'. Seat status was modified concurrently.`
+          );
+        }
+      }
+
+      const randomCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+      const bookingReference = `VY-${randomCode}`;
+      const totalPrice = heldSeats.reduce((sum, s) => sum + s.price, 0);
+
+      const updateBookingStmt = db.prepare(`
+        UPDATE bookings
+        SET status = 'confirmed',
+            passenger_name = ?,
+            passenger_document_id = ?,
+            contact_email = ?,
+            total_price = ?,
+            confirmed_at = ?
+        WHERE id = ?
+      `);
+
+      updateBookingStmt.run(
+        passenger_name.trim(),
+        passenger_document_id.trim(),
+        contact_email.trim().toLowerCase(),
+        totalPrice,
+        nowIso,
+        heldBooking.id
+      );
+
+      result = {
+        success: true,
+        booking_reference: bookingReference,
+        booking_id: heldBooking.id,
+        status: 'confirmed',
+        flight: {
+          id: heldBooking.flight_id,
+          flight_number: heldBooking.flight_number,
+          origin: heldBooking.origin,
+          origin_city: heldBooking.origin_city,
+          destination: heldBooking.destination,
+          destination_city: heldBooking.destination_city,
+          departure_at: heldBooking.departure_at,
+          arrival_at: heldBooking.arrival_at,
+          aircraft_type: heldBooking.aircraft_type,
+        },
+        passengers: {
+          name: passenger_name.trim(),
+          document_id: passenger_document_id.trim(),
+          email: contact_email.trim().toLowerCase(),
+        },
+        seats: heldSeats.map((s) => ({
+          seat_number: s.seat_number,
+          cabin_class: s.cabin_class,
+          price: s.price,
+        })),
+        total_price: totalPrice,
+        confirmed_at: nowIso,
+      };
+      return;
     }
 
-    // 6. Generate random booking reference (e.g. VY-849201)
-    const randomCode = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const bookingReference = `VY-${randomCode}`;
+    // Branch B: Direct booking with flight_id and seat_number / seat_numbers
+    if (normalizedFlightId && directSeatNumbers.length > 0) {
+      const flightStmt = db.prepare(`
+        SELECT 
+          f.id,
+          f.flight_number,
+          f.origin_airport_code AS origin,
+          orig.city AS origin_city,
+          f.destination_airport_code AS destination,
+          dest.city AS destination_city,
+          f.departure_at,
+          f.arrival_at,
+          f.aircraft_type
+        FROM flights f
+        JOIN airports orig ON f.origin_airport_code = orig.code
+        JOIN airports dest ON f.destination_airport_code = dest.code
+        WHERE f.id = ?
+      `);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const flight = flightStmt.get(normalizedFlightId) as any;
 
-    // 7. Update booking record
-    const totalPrice = seats.reduce((sum, s) => sum + s.price, 0);
-    const updateBookingStmt = db.prepare(`
-      UPDATE bookings
-      SET status = 'confirmed',
-          passenger_name = ?,
-          passenger_document_id = ?,
-          contact_email = ?,
-          total_price = ?,
-          confirmed_at = ?
-      WHERE id = ?
-    `);
+      if (!flight) {
+        throw new Error(`Flight with ID '${normalizedFlightId}' not found.`);
+      }
 
-    updateBookingStmt.run(
-      passenger_name.trim(),
-      passenger_document_id.trim(),
-      contact_email.trim().toLowerCase(),
-      totalPrice,
-      nowIso,
-      booking.id
-    );
+      // Fetch requested seats
+      const placeholders = directSeatNumbers.map(() => '?').join(',');
+      const seatsStmt = db.prepare(`
+        SELECT s.id, s.flight_id, s.seat_number, s.cabin_class, s.status, s.held_until, s.version, s.price
+        FROM seats s
+        WHERE s.flight_id = ? AND UPPER(s.seat_number) IN (${placeholders})
+        ORDER BY s.seat_number ASC
+      `);
+      const targetSeats = seatsStmt.all(normalizedFlightId, ...directSeatNumbers) as Seat[];
 
-    result = {
-      success: true,
-      booking_reference: bookingReference,
-      booking_id: booking.id,
-      status: 'confirmed',
-      flight: {
-        id: booking.flight_id,
-        flight_number: booking.flight_number,
-        origin: booking.origin,
-        origin_city: booking.origin_city,
-        destination: booking.destination,
-        destination_city: booking.destination_city,
-        departure_at: booking.departure_at,
-        arrival_at: booking.arrival_at,
-        aircraft_type: booking.aircraft_type,
-      },
-      passengers: {
-        name: passenger_name.trim(),
-        document_id: passenger_document_id.trim(),
-        email: contact_email.trim().toLowerCase(),
-      },
-      seats: seats.map((s) => ({
-        seat_number: s.seat_number,
-        cabin_class: s.cabin_class,
-        price: s.price,
-      })),
-      total_price: totalPrice,
-      confirmed_at: nowIso,
-    };
+      // Check all requested seats exist
+      const foundSeatNumbers = new Set(targetSeats.map((s) => s.seat_number.toUpperCase()));
+      for (const seatNum of directSeatNumbers) {
+        if (!foundSeatNumbers.has(seatNum)) {
+          throw new Error(`Seat '${seatNum}' does not exist on flight ${normalizedFlightId}.`);
+        }
+      }
+
+      // Validate availability
+      for (const seat of targetSeats) {
+        const isAvailable =
+          seat.status === 'available' ||
+          (seat.status === 'held' && seat.held_until && new Date(seat.held_until).getTime() <= now.getTime());
+        if (!isAvailable) {
+          throw new Error(
+            `Seat '${seat.seat_number}' is not available for booking (status: ${seat.status}). Please choose another seat.`
+          );
+        }
+      }
+
+      // Update seats directly to 'booked' atomically
+      const updateSeatStmt = db.prepare(`
+        UPDATE seats
+        SET status = 'booked',
+            held_until = NULL,
+            version = version + 1
+        WHERE id = ?
+          AND version = ?
+          AND (status = 'available' OR held_until <= ?)
+      `);
+
+      for (const seat of targetSeats) {
+        const updateResult = updateSeatStmt.run(seat.id, seat.version, nowIso);
+        if (updateResult.changes === 0) {
+          throw new Error(
+            `Unable to book seat '${seat.seat_number}'. Seat was modified concurrently by another request.`
+          );
+        }
+      }
+
+      // Create or update booking record
+      const finalSessionId = normalizedSessionId || crypto.randomUUID();
+      const randomCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+      const bookingReference = `VY-${randomCode}`;
+      const totalPrice = targetSeats.reduce((sum, s) => sum + s.price, 0);
+
+      let bookingId = crypto.randomUUID();
+      if (heldBooking) {
+        bookingId = heldBooking.id;
+        db.prepare(`
+          UPDATE bookings
+          SET flight_id = ?,
+              status = 'confirmed',
+              passenger_name = ?,
+              passenger_document_id = ?,
+              contact_email = ?,
+              total_price = ?,
+              confirmed_at = ?
+          WHERE id = ?
+        `).run(
+          normalizedFlightId,
+          passenger_name.trim(),
+          passenger_document_id.trim(),
+          contact_email.trim().toLowerCase(),
+          totalPrice,
+          nowIso,
+          bookingId
+        );
+      } else {
+        db.prepare(`
+          INSERT INTO bookings (
+            id, booking_session_id, flight_id, status,
+            passenger_name, passenger_document_id, contact_email,
+            total_price, created_at, confirmed_at
+          ) VALUES (?, ?, ?, 'confirmed', ?, ?, ?, ?, ?, ?)
+        `).run(
+          bookingId,
+          finalSessionId,
+          normalizedFlightId,
+          passenger_name.trim(),
+          passenger_document_id.trim(),
+          contact_email.trim().toLowerCase(),
+          totalPrice,
+          nowIso,
+          nowIso
+        );
+      }
+
+      // Link booking seats
+      const linkSeatStmt = db.prepare(`
+        INSERT OR IGNORE INTO booking_seats (booking_id, seat_id)
+        VALUES (?, ?)
+      `);
+      for (const seat of targetSeats) {
+        linkSeatStmt.run(bookingId, seat.id);
+      }
+
+      result = {
+        success: true,
+        booking_reference: bookingReference,
+        booking_id: bookingId,
+        status: 'confirmed',
+        flight: {
+          id: flight.id,
+          flight_number: flight.flight_number,
+          origin: flight.origin,
+          origin_city: flight.origin_city,
+          destination: flight.destination,
+          destination_city: flight.destination_city,
+          departure_at: flight.departure_at,
+          arrival_at: flight.arrival_at,
+          aircraft_type: flight.aircraft_type,
+        },
+        passengers: {
+          name: passenger_name.trim(),
+          document_id: passenger_document_id.trim(),
+          email: contact_email.trim().toLowerCase(),
+        },
+        seats: targetSeats.map((s) => ({
+          seat_number: s.seat_number,
+          cabin_class: s.cabin_class,
+          price: s.price,
+        })),
+        total_price: totalPrice,
+        confirmed_at: nowIso,
+      };
+      return;
+    }
+
+    // If normalizedSessionId was provided but had no held seats and no direct booking was specified
+    if (normalizedSessionId) {
+      throw new Error(
+        `No active held seats found for booking session '${normalizedSessionId}'. Please select seats first or provide flight_id and seat_number.`
+      );
+    }
+
+    throw new Error('Either booking_session_id or flight_id and seat_number must be provided.');
   });
 
   transaction();

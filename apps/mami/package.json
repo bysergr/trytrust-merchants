@@ -11,6 +11,7 @@
     "seed": "tsx scripts/seed.ts",
     "mcp": "tsx scripts/mcp-server.ts",
     "test:mcp": "tsx scripts/test-mcp.ts",
+    "test:verify": "tsx scripts/verify-mcp-e2e.ts",
     "test:race": "tsx scripts/test-race-condition.ts",
     "lint": "eslint"
   },

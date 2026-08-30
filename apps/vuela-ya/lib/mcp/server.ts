@@ -420,9 +420,24 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'pay',
-    'Finalize and confirm the flight booking atomically for all seats held in the session. Converts held seats to booked status and returns the confirmed booking reference code.',
+    'Finalize and confirm the flight booking atomically. You can either provide an active booking_session_id (from select_seat) OR provide flight_id and seat_number (or seat_numbers) directly. Converts seats to booked status, reduces remaining inventory, and returns the confirmed booking reference code.',
     {
-      booking_session_id: z.string().describe('The active booking session ID with held seats'),
+      booking_session_id: z
+        .string()
+        .optional()
+        .describe('The active booking session ID with held seats (optional if flight_id and seat_number are provided)'),
+      flight_id: z
+        .string()
+        .optional()
+        .describe('The unique flight ID (required if booking_session_id is omitted or for direct booking)'),
+      seat_number: z
+        .string()
+        .optional()
+        .describe('The seat number to book directly (e.g., "1A", "12C") when booking without a prior hold session'),
+      seat_numbers: z
+        .array(z.string())
+        .optional()
+        .describe('Array of seat numbers to book directly when booking multiple seats without a prior hold session'),
       passenger_name: z.string().describe('Full name of the primary passenger'),
       passenger_document_id: z.string().describe('Government ID or passport number of the passenger'),
       contact_email: z.string().email().describe('Contact email address for the booking confirmation and e-ticket'),
@@ -430,12 +445,18 @@ export function registerMcpTools(server: any): void {
     },
     async ({
       booking_session_id,
+      flight_id,
+      seat_number,
+      seat_numbers,
       passenger_name,
       passenger_document_id,
       contact_email,
       payment_confirmation,
     }: {
-      booking_session_id: string;
+      booking_session_id?: string;
+      flight_id?: string;
+      seat_number?: string;
+      seat_numbers?: string[];
       passenger_name: string;
       passenger_document_id: string;
       contact_email: string;
@@ -444,24 +465,41 @@ export function registerMcpTools(server: any): void {
       try {
         const order = executePayment({
           booking_session_id,
+          flight_id,
+          seat_number,
+          seat_numbers,
           passenger_name,
           passenger_document_id,
           contact_email,
           payment_confirmation,
         });
 
+        // Query remaining inventory for the flight
+        const remainingInfo = getFlightDetails(order.flight.id);
+        const remainingSeats = remainingInfo.seat_availability.available_seats;
+        const totalSeats = remainingInfo.seat_availability.total_seats;
+        const economyRemaining = remainingInfo.seat_availability.economy.available;
+        const businessRemaining = remainingInfo.seat_availability.business.available;
+
         const formatted = {
           success: true,
-          message: 'Payment processed successfully. Flight booking confirmed!',
+          message: `Payment processed successfully. Flight booking confirmed! Remaining inventory on flight ${order.flight.flight_number}: ${remainingSeats}/${totalSeats} seats available (${economyRemaining} economy, ${businessRemaining} business).`,
           booking_reference: order.booking_reference,
           booking_id: order.booking_id,
           status: order.status,
           flight: {
+            id: order.flight.id,
             flight_number: order.flight.flight_number,
             route: `${order.flight.origin_city} (${order.flight.origin}) to ${order.flight.destination_city} (${order.flight.destination})`,
             departure_at: order.flight.departure_at,
             arrival_at: order.flight.arrival_at,
             aircraft_type: order.flight.aircraft_type,
+          },
+          inventory_remaining: {
+            available_seats: remainingSeats,
+            total_seats: totalSeats,
+            economy_available: economyRemaining,
+            business_available: businessRemaining,
           },
           passenger: {
             name: order.passengers.name,

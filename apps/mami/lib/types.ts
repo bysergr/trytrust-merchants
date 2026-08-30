@@ -101,6 +101,8 @@ export interface OrderDetail extends Order {
     quantity: number;
     unit_price: number;
     subtotal: number;
+    previous_stock?: number;
+    remaining_stock?: number;
     image_url?: string;
   }>;
   currency: string;

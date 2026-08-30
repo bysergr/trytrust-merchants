@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Car, Package, Truck, ShieldAlert, History } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 import { ServiceType } from '@/lib/types';
 
 interface NavbarProps {
@@ -21,32 +22,25 @@ export function Navbar({
   requestCount = 0,
 }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-50 w-full bg-black text-white border-b border-neutral-800 shadow-md">
+    <header className="sticky top-0 z-50 w-full bg-black text-white border-b border-neutral-800 shadow-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand & Logo */}
-        <div className="flex items-center gap-6">
+        {/* Brand & Custom Non-Letter / Non-Generic Logo */}
+        <div className="flex items-center gap-8">
           <button
             onClick={() => onSelectTab('home')}
-            className="flex items-center gap-2 text-left group focus:outline-none"
+            className="flex items-center text-left group focus:outline-none hover:opacity-90 transition-opacity"
           >
-            <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center font-black text-black text-xl tracking-tighter group-hover:scale-105 transition-transform">
-              U
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
-                UBER <span className="text-emerald-400 font-medium text-xs tracking-widest uppercase px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-800">Mobility</span>
-              </span>
-            </div>
+            <BrandLogo />
           </button>
 
-          {/* Primary Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Primary Navigation Tabs - Authentic Uber Style */}
+          <nav className="hidden md:flex items-center gap-1.5">
             <button
               onClick={() => onSelectTab('ride')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'ride'
-                  ? 'bg-neutral-800 text-white shadow-inner'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                  ? 'bg-neutral-900 text-white shadow-inner ring-1 ring-neutral-700'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
               <Car className="w-4 h-4 text-emerald-400" />
@@ -54,37 +48,44 @@ export function Navbar({
             </button>
             <button
               onClick={() => onSelectTab('package')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'package'
-                  ? 'bg-neutral-800 text-white shadow-inner'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                  ? 'bg-neutral-900 text-white shadow-inner ring-1 ring-neutral-700'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
               <Package className="w-4 h-4 text-emerald-400" />
-              Package
+              Package (Flash)
             </button>
             <button
               onClick={() => onSelectTab('freight')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'freight'
-                  ? 'bg-neutral-800 text-white shadow-inner'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                  ? 'bg-neutral-900 text-white shadow-inner ring-1 ring-neutral-700'
+                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900/60'
               }`}
             >
               <Truck className="w-4 h-4 text-emerald-400" />
-              Freight
+              Freight (Carga)
             </button>
           </nav>
         </div>
 
-        {/* Right side controls: Tracking, Activity, Admin */}
+        {/* Right side controls */}
         <div className="flex items-center gap-3">
+          {sessionId && (
+            <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              {sessionId.slice(0, 10)}...
+            </span>
+          )}
+
           {activeRequestId && (
             <button
               onClick={() => onSelectTab('tracking')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all border ${
                 activeTab === 'tracking'
-                  ? 'bg-emerald-500 text-black border-emerald-400'
+                  ? 'bg-emerald-500 text-black border-emerald-400 shadow-[0_0_12px_rgba(6,193,103,0.3)]'
                   : 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60 hover:bg-emerald-900'
               }`}
             >
@@ -96,15 +97,9 @@ export function Navbar({
             </button>
           )}
 
-          {sessionId && (
-            <span className="hidden lg:inline-flex items-center px-2 py-0.5 rounded-md bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-400">
-              {sessionId.slice(0, 12)}...
-            </span>
-          )}
-
           <button
             onClick={() => onSelectTab('activity')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
               activeTab === 'activity'
                 ? 'bg-neutral-800 text-white border-neutral-700'
                 : 'text-neutral-400 border-neutral-800 hover:bg-neutral-900 hover:text-neutral-200'
@@ -123,7 +118,7 @@ export function Navbar({
           {/* Unauthenticated Admin link */}
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-800/60 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-800/60 transition-colors"
             title="Unauthenticated Admin Portal"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />

@@ -69,6 +69,10 @@ export interface QuoteInput {
   vehicle_type_id: string;
   pickup_address: string;
   dropoff_address: string;
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
+  dropoff_lat?: number | null;
+  dropoff_lng?: number | null;
   scheduled_at?: string | null;
   package_weight_kg?: number | null;
   cargo_weight_kg?: number | null;
@@ -79,6 +83,8 @@ export interface QuoteResult {
   vehicle_type: VehicleType;
   pickup_address: string;
   dropoff_address: string;
+  pickup_coords?: { lat: number; lng: number };
+  dropoff_coords?: { lat: number; lng: number };
   distance_km: number;
   duration_minutes: number;
   base_fare: number;

@@ -54,7 +54,7 @@ export default function AdminPage() {
     async function load() {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/products?limit=100');
+        const res = await fetch('/api/products?limit=100', { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load products');
         const data = await res.json();
         if (isMounted) {
@@ -142,6 +142,7 @@ export default function AdminPage() {
       const res = await fetch(`/api/products/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({
           price: draft.price,
           current_stock: draft.stock,

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addToCart, removeFromCart, getCartBySessionId } from '@/lib/services/cart';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
+
 const COOKIE_NAME = 'mami_session_id';
 
 export async function GET(request: NextRequest) {
@@ -8,37 +15,43 @@ export async function GET(request: NextRequest) {
     const sessionId = request.cookies.get(COOKIE_NAME)?.value;
 
     if (!sessionId) {
-      return NextResponse.json({
-        cart_id: '',
-        session_id: '',
-        status: 'open',
-        items: [],
-        item_count: 0,
-        total: 0,
-        currency: 'COP',
-      });
+      return NextResponse.json(
+        {
+          cart_id: '',
+          session_id: '',
+          status: 'open',
+          items: [],
+          item_count: 0,
+          total: 0,
+          currency: 'COP',
+        },
+        { headers: noCacheHeaders }
+      );
     }
 
     const cart = getCartBySessionId(sessionId);
     if (!cart) {
       // If the cart doesn't exist or is invalid, clear cookie
-      const response = NextResponse.json({
-        cart_id: '',
-        session_id: '',
-        status: 'open',
-        items: [],
-        item_count: 0,
-        total: 0,
-        currency: 'COP',
-      });
+      const response = NextResponse.json(
+        {
+          cart_id: '',
+          session_id: '',
+          status: 'open',
+          items: [],
+          item_count: 0,
+          total: 0,
+          currency: 'COP',
+        },
+        { headers: noCacheHeaders }
+      );
       response.cookies.delete(COOKIE_NAME);
       return response;
     }
 
-    return NextResponse.json(cart);
+    return NextResponse.json(cart, { headers: noCacheHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch cart';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
@@ -51,7 +64,7 @@ export async function POST(request: NextRequest) {
     const quantity = parseInt(body.quantity || '1', 10);
 
     if (!productId) {
-      return NextResponse.json({ error: 'Product ID is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Product ID is required.' }, { status: 400, headers: noCacheHeaders });
     }
 
     const result = addToCart({
@@ -60,10 +73,13 @@ export async function POST(request: NextRequest) {
       quantity,
     });
 
-    const response = NextResponse.json({
-      cart: result.cartDetail,
-      sessionId: result.sessionId,
-    });
+    const response = NextResponse.json(
+      {
+        cart: result.cartDetail,
+        sessionId: result.sessionId,
+      },
+      { headers: noCacheHeaders }
+    );
 
     // Set or refresh secure httpOnly cookie
     response.cookies.set({
@@ -79,7 +95,7 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to add item to cart';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: 400, headers: noCacheHeaders });
   }
 }
 
@@ -97,11 +113,11 @@ export async function DELETE(request: NextRequest) {
     const quantity = quantityParam ? parseInt(String(quantityParam), 10) : undefined;
 
     if (!sessionId) {
-      return NextResponse.json({ error: 'Session ID is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Session ID is required.' }, { status: 400, headers: noCacheHeaders });
     }
 
     if (!productId) {
-      return NextResponse.json({ error: 'Product ID is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Product ID is required.' }, { status: 400, headers: noCacheHeaders });
     }
 
     const result = removeFromCart({
@@ -110,12 +126,15 @@ export async function DELETE(request: NextRequest) {
       quantity,
     });
 
-    return NextResponse.json({
-      cart: result.cartDetail,
-      sessionId: result.sessionId,
-    });
+    return NextResponse.json(
+      {
+        cart: result.cartDetail,
+        sessionId: result.sessionId,
+      },
+      { headers: noCacheHeaders }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to remove item from cart';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: 400, headers: noCacheHeaders });
   }
 }
