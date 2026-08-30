@@ -7,8 +7,22 @@ import { DeliveryAddress } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerMcpTools(server: any): void {
+  const register = (
+    name: string,
+    description: string,
+    schema: Record<string, z.ZodTypeAny>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler: (args: any) => Promise<any>
+  ) => {
+    if (typeof server.registerTool === 'function') {
+      server.registerTool(name, { description, inputSchema: schema }, handler);
+    } else if (typeof server.tool === 'function') {
+      server.tool(name, description, schema, handler);
+    }
+  };
+
   // 1. list_products
-  server.tool(
+  register(
     'list_products',
     'List available products in the catalog with pagination and optional category filtering.',
     {
@@ -55,7 +69,7 @@ export function registerMcpTools(server: any): void {
   );
 
   // 2. search_products
-  server.tool(
+  register(
     'search_products',
     'Search products in the catalog by query keyword (matches title, description, or category).',
     {
@@ -97,7 +111,7 @@ export function registerMcpTools(server: any): void {
   );
 
   // 3. add_to_cart
-  server.tool(
+  register(
     'add_to_cart',
     'Add an item to the shopping cart. If session_id is not provided, the server generates a new one and returns it. Always preserve the returned session_id for subsequent cart operations.',
     {
@@ -153,7 +167,7 @@ export function registerMcpTools(server: any): void {
   );
 
   // 4. remove_from_cart
-  server.tool(
+  register(
     'remove_from_cart',
     'Remove a product from the shopping cart or decrease its quantity.',
     {
@@ -209,7 +223,7 @@ export function registerMcpTools(server: any): void {
   );
 
   // 5. review_cart
-  server.tool(
+  register(
     'review_cart',
     'Review all items, quantities, subtotals, and total price in the active cart before checkout.',
     {
@@ -263,7 +277,7 @@ export function registerMcpTools(server: any): void {
   );
 
   // 6. pay
-  server.tool(
+  register(
     'pay',
     'Execute atomic checkout and payment for the active cart. Validates stock, decrements inventory, creates order, and calculates estimated arrival time.',
     {

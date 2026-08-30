@@ -6,10 +6,27 @@ import { getSeatMap, selectSeat, releaseSeat } from '../services/seats';
 import { executePayment } from '../services/checkout';
 import { CabinClass } from '../types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function registerTool(
+  server: any,
+  name: string,
+  description: string,
+  schema: any,
+  handler: (args: any) => Promise<any>
+) {
+  if (typeof server.tool === 'function') {
+    server.tool(name, description, schema, handler);
+  } else if (typeof server.registerTool === 'function') {
+    server.registerTool(name, { description, inputSchema: schema }, handler);
+  } else if (typeof server.addTool === 'function') {
+    server.addTool(name, description, schema, handler);
+  }
+}
+
 export function registerMcpTools(server: any): void {
   // 1. list_airports
-  server.tool(
+  registerTool(
+    server,
     'list_airports',
     'List all served domestic Colombian airports with their IATA codes, cities, and full airport names. Use this tool to get valid origin and destination codes before searching flights.',
     {
@@ -46,7 +63,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 2. search_flights
-  server.tool(
+  registerTool(
+    server,
     'search_flights',
     'Search scheduled domestic Colombian flights between two airports for a specific departure date. Returns matching flights with real-time seat availability and prices.',
     {
@@ -128,7 +146,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 3. compare_flights
-  server.tool(
+  registerTool(
+    server,
     'compare_flights',
     'Compare 2 to 4 flights side-by-side, displaying schedules, durations, prices per cabin class, aircraft types, and live seat availability.',
     {
@@ -177,7 +196,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 4. get_flight_details
-  server.tool(
+  registerTool(
+    server,
     'get_flight_details',
     'Retrieve full detailed information for a specific flight, including airport names, schedule, aircraft model, and seat availability breakdown by cabin class.',
     {
@@ -228,7 +248,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 5. get_seat_map
-  server.tool(
+  registerTool(
+    server,
     'get_seat_map',
     'Get the real-time seat map for a flight, showing all seat numbers, cabin classes (business/economy), prices, and live statuses (available, held, booked). Applies lazy hold expiration.',
     {
@@ -280,7 +301,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 6. select_seat
-  server.tool(
+  registerTool(
+    server,
     'select_seat',
     'Select and temporarily hold a seat on a flight for 10 minutes. If booking_session_id is not provided, the server generates a new one and returns it. Always retain and reuse this booking_session_id for subsequent seat selections, releases, or payment.',
     {
@@ -348,7 +370,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 7. release_seat
-  server.tool(
+  registerTool(
+    server,
     'release_seat',
     'Release a seat currently held by your booking session, immediately returning it to available status.',
     {
@@ -394,7 +417,8 @@ export function registerMcpTools(server: any): void {
   );
 
   // 8. pay
-  server.tool(
+  registerTool(
+    server,
     'pay',
     'Finalize and confirm the flight booking atomically for all seats held in the session. Converts held seats to booked status and returns the confirmed booking reference code.',
     {

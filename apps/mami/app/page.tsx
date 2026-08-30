@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
+import Link from 'next/link';
 import { ProductWithStock, CartDetail, DeliveryAddress, OrderDetail } from '@/lib/types';
 import { Navbar } from '@/components/Navbar';
 import { HeroBanner } from '@/components/HeroBanner';
@@ -414,6 +415,12 @@ export default function StorePage() {
                 <li>• 6 Registered MCP Server Tools</li>
                 <li>• Shared SQLite &amp; Route Handlers</li>
                 <li>• Strict concurrency &amp; locking</li>
+                <li>
+                  •{' '}
+                  <Link href="/admin" className="text-blue-600 font-bold hover:underline">
+                    Admin Inventory Panel →
+                  </Link>
+                </li>
               </ul>
             </div>
 

@@ -168,3 +168,86 @@ export function getCategories(): string[] {
   const rows = db.prepare(`SELECT DISTINCT category FROM products ORDER BY category ASC`).all() as Array<{ category: string }>;
   return rows.map((r) => r.category);
 }
+
+export interface UpdateProductParams {
+  id: string;
+  price?: number;
+  current_stock?: number;
+}
+
+export function updateProduct(params: UpdateProductParams): ProductWithStock {
+  const db = getDatabase();
+
+  if (!params.id || typeof params.id !== 'string' || !params.id.trim()) {
+    throw new Error('Product ID is required.');
+  }
+
+  if (params.price === undefined && params.current_stock === undefined) {
+    throw new Error('At least one field to update (price or current_stock) must be provided.');
+  }
+
+  if (params.price !== undefined && params.price !== null) {
+    if (typeof params.price !== 'number' || !Number.isInteger(params.price) || params.price < 0) {
+      throw new Error('Price must be a non-negative integer.');
+    }
+  }
+
+  if (params.current_stock !== undefined && params.current_stock !== null) {
+    if (typeof params.current_stock !== 'number' || !Number.isInteger(params.current_stock) || params.current_stock < 0) {
+      throw new Error('Current stock must be a non-negative integer.');
+    }
+  }
+
+  const updateTx = db.transaction(() => {
+    // Check product exists
+    const existing = db.prepare(`SELECT id FROM products WHERE id = ? OR sku = ? LIMIT 1`).get(params.id, params.id) as { id: string } | undefined;
+    if (!existing) {
+      throw new Error(`Product with ID '${params.id}' was not found.`);
+    }
+
+    const productId = existing.id;
+
+    if (params.price !== undefined && params.price !== null) {
+      db.prepare(`UPDATE products SET price = ? WHERE id = ?`).run(params.price, productId);
+    }
+
+    if (params.current_stock !== undefined && params.current_stock !== null) {
+      const invRow = db.prepare(`SELECT product_id FROM inventory WHERE product_id = ?`).get(productId);
+      if (invRow) {
+        db.prepare(`
+          UPDATE inventory 
+          SET current_stock = ?, version = version + 1 
+          WHERE product_id = ?
+        `).run(params.current_stock, productId);
+      } else {
+        db.prepare(`
+          INSERT INTO inventory (product_id, current_stock, version) 
+          VALUES (?, ?, 1)
+        `).run(productId, params.current_stock);
+      }
+    }
+
+    const updated = db.prepare(`
+      SELECT 
+        p.id,
+        p.sku,
+        p.name,
+        p.description,
+        p.properties,
+        p.price,
+        p.category,
+        p.image_url,
+        p.created_at,
+        COALESCE(i.current_stock, 0) as current_stock,
+        COALESCE(i.version, 1) as version
+      FROM products p
+      LEFT JOIN inventory i ON p.id = i.product_id
+      WHERE p.id = ?
+      LIMIT 1
+    `).get(productId) as ProductWithStock;
+
+    return updated;
+  });
+
+  return updateTx();
+}

@@ -78,6 +78,13 @@ export interface SearchFlightsParams {
   cabin_class?: CabinClass;
 }
 
+export interface UpdateFlightParams {
+  base_price_economy?: number;
+  base_price_business?: number;
+  departure_at?: string;
+  arrival_at?: string;
+}
+
 export interface FlightSearchResult {
   id: string;
   flight_number: string;

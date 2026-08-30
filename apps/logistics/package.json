@@ -6,11 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "tsx scripts/seed.ts",
+    "predev": "pnpm seed",
+    "prebuild": "pnpm seed",
+    "mcp": "tsx scripts/mcp-server.ts",
+    "test:mcp": "tsx scripts/test-mcp.ts",
+    "test:route": "tsx scripts/test-mcp-route.ts",
+    "test:race": "tsx scripts/test-race-condition.ts",
+    "test:api": "tsx scripts/test-api.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@modelcontextprotocol/server": "^2.0.0",
+    "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.35.0",
@@ -24,6 +34,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -31,6 +42,7 @@
     "eslint-config-next": "16.3.3",
     "shadcn": "^4.19.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   },
   "packageManager": "pnpm@11.24.0"

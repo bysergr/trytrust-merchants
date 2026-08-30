@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Search, ShoppingCart, MapPin, Sparkles, X, Terminal } from 'lucide-react';
+import Link from 'next/link';
+import { Search, ShoppingCart, MapPin, Sparkles, X, Terminal, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
@@ -35,13 +36,22 @@ export function Navbar({
             <span className="hidden sm:inline text-white/60">|</span>
             <span className="hidden sm:inline text-amber-200">Shared SQLite & Atomic Concurrency</span>
           </div>
-          <button
-            onClick={onOpenMcpInfo}
-            className="flex items-center gap-1.5 hover:text-amber-300 font-mono text-[11px] bg-white/10 px-2 py-0.5 rounded transition-colors"
-          >
-            <Terminal className="size-3" />
-            <span>MCP Tools (6 Available)</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 hover:text-amber-300 font-mono text-[11px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition-colors text-white"
+            >
+              <SlidersHorizontal className="size-3" />
+              <span>Admin Panel</span>
+            </Link>
+            <button
+              onClick={onOpenMcpInfo}
+              className="flex items-center gap-1.5 hover:text-amber-300 font-mono text-[11px] bg-white/10 px-2 py-0.5 rounded transition-colors"
+            >
+              <Terminal className="size-3" />
+              <span>MCP Tools (6 Available)</span>
+            </button>
+          </div>
         </div>
       </div>
 

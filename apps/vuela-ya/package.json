@@ -12,6 +12,7 @@
     "prebuild": "pnpm seed",
     "mcp": "tsx scripts/mcp-server.ts",
     "test:mcp": "tsx scripts/test-mcp.ts",
+    "test:route": "tsx scripts/test-mcp-route.ts",
     "test:race": "tsx scripts/test-race-condition.ts"
   },
   "dependencies": {

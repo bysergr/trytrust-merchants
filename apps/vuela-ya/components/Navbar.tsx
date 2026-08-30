@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Cpu, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { Cpu, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { VuelaYaBrand } from './VuelaYaLogo';
 
@@ -28,6 +29,18 @@ export function Navbar({ onOpenMcpModal }: NavbarProps) {
               COP ($)
             </div>
           </div>
+
+          <Link href="/admin">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1.5 font-bold border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <SlidersHorizontal className="size-3.5 text-slate-500 dark:text-slate-400" />
+              <span className="hidden sm:inline">Admin Panel</span>
+              <span className="sm:hidden">Admin</span>
+            </Button>
+          </Link>
 
           <Button
             variant="outline"
