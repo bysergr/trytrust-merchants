@@ -1,13 +1,18 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
+import { SEED_PRODUCTS } from './catalog-data';
 
-const DB_DIR = path.join(process.cwd(), 'data');
-const DB_PATH = process.env.DB_PATH || path.join(DB_DIR, 'app.db');
-
-// Ensure data directory exists
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+export function getDatabasePath(): string {
+  if (process.env.DB_PATH) {
+    return process.env.DB_PATH;
+  }
+  // In Vercel or AWS Lambda, the root filesystem is read-only.
+  // /tmp is the only writable directory.
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
+    return path.join('/tmp', 'mami-app.db');
+  }
+  return path.join(process.cwd(), 'data', 'app.db');
 }
 
 let dbInstance: Database.Database | null = null;
@@ -17,15 +22,32 @@ export function getDatabase(): Database.Database {
     return dbInstance;
   }
 
-  const db = new Database(DB_PATH);
+  const dbPath = getDatabasePath();
+  const dbDir = path.dirname(dbPath);
+
+  // Ensure data directory exists
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+    } catch {
+      // ignore if directory exists or cannot be created
+    }
+  }
+
+  const db = new Database(dbPath);
   
   // High concurrency settings
-  db.pragma('journal_mode = WAL');
+  try {
+    db.pragma('journal_mode = WAL');
+  } catch {
+    db.pragma('journal_mode = DELETE');
+  }
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
   db.pragma('synchronous = NORMAL');
 
   initSchema(db);
+  autoSeedIfEmpty(db);
 
   dbInstance = db;
   return dbInstance;
@@ -94,6 +116,55 @@ export function initSchema(db: Database.Database): void {
   `);
 }
 
+export function seedDatabase(db: Database.Database): void {
+  const insertProduct = db.prepare(`
+    INSERT INTO products (id, sku, name, description, properties, price, category, image_url, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertInventory = db.prepare(`
+    INSERT INTO inventory (product_id, current_stock, version)
+    VALUES (?, ?, 1)
+  `);
+
+  const seedTransaction = db.transaction(() => {
+    const now = new Date().toISOString();
+    for (const item of SEED_PRODUCTS) {
+      insertProduct.run(
+        item.code, // using code as stable product id
+        item.code, // sku
+        item.name,
+        item.description,
+        item.properties,
+        item.price,
+        item.category,
+        item.image_url,
+        now
+      );
+
+      insertInventory.run(
+        item.code,
+        item.initial_stock
+      );
+    }
+  });
+
+  seedTransaction();
+}
+
+export function autoSeedIfEmpty(db: Database.Database): void {
+  try {
+    const countRow = db.prepare(`SELECT COUNT(*) as count FROM products`).get() as { count: number } | undefined;
+    if (!countRow || countRow.count === 0) {
+      seedDatabase(db);
+    }
+  } catch {
+    // If table doesn't exist yet, re-init and seed
+    initSchema(db);
+    seedDatabase(db);
+  }
+}
+
 export function resetDatabase(db: Database.Database): void {
   db.exec(`
     DROP TABLE IF EXISTS order_items;
@@ -104,4 +175,5 @@ export function resetDatabase(db: Database.Database): void {
     DROP TABLE IF EXISTS products;
   `);
   initSchema(db);
+  seedDatabase(db);
 }

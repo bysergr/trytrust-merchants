@@ -1,5 +1,6 @@
 import { getDatabase, resetDatabase } from './db';
 import { Airport, Seat } from './types';
+import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
 
 export const SEEDED_AIRPORTS: Omit<Airport, 'created_at'>[] = [
@@ -435,8 +436,8 @@ export function generateSeatMapForFlight(
   return seats;
 }
 
-export function seedDatabase(): { airportsCount: number; flightsCount: number; seatsCount: number } {
-  const db = getDatabase();
+export function seedDatabase(customDb?: Database.Database): { airportsCount: number; flightsCount: number; seatsCount: number } {
+  const db = customDb || getDatabase();
   resetDatabase(db);
 
   const now = new Date();

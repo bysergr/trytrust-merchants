@@ -1,13 +1,18 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
+import { seedDatabase } from './seed-data';
 
-const DB_DIR = path.join(process.cwd(), 'data');
-const DB_PATH = process.env.DB_PATH || path.join(DB_DIR, 'app.db');
-
-// Ensure data directory exists
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+export function getDatabasePath(): string {
+  if (process.env.DB_PATH) {
+    return process.env.DB_PATH;
+  }
+  // In Vercel or AWS Lambda, the root filesystem is read-only.
+  // /tmp is the only writable directory.
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
+    return path.join('/tmp', 'vuela-ya-app.db');
+  }
+  return path.join(process.cwd(), 'data', 'app.db');
 }
 
 let dbInstance: Database.Database | null = null;
@@ -17,15 +22,32 @@ export function getDatabase(): Database.Database {
     return dbInstance;
   }
 
-  const db = new Database(DB_PATH);
+  const dbPath = getDatabasePath();
+  const dbDir = path.dirname(dbPath);
 
-  // SQLite configuration for concurrent reads/writes and data integrity
-  db.pragma('journal_mode = WAL');
+  // Ensure data directory exists
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+    } catch {
+      // ignore if directory exists or cannot be created
+    }
+  }
+
+  const db = new Database(dbPath);
+
+  // High concurrency & compatibility settings
+  try {
+    db.pragma('journal_mode = WAL');
+  } catch {
+    db.pragma('journal_mode = DELETE');
+  }
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
   db.pragma('synchronous = NORMAL');
 
   initSchema(db);
+  autoSeedIfEmpty(db);
 
   dbInstance = db;
   return dbInstance;
@@ -93,6 +115,18 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_booking_seats_booking ON booking_seats(booking_id);
     CREATE INDEX IF NOT EXISTS idx_booking_seats_seat ON booking_seats(seat_id);
   `);
+}
+
+export function autoSeedIfEmpty(db: Database.Database): void {
+  try {
+    const countRow = db.prepare(`SELECT COUNT(*) as count FROM airports`).get() as { count: number } | undefined;
+    if (!countRow || countRow.count === 0) {
+      seedDatabase(db);
+    }
+  } catch {
+    initSchema(db);
+    seedDatabase(db);
+  }
 }
 
 export function resetDatabase(db: Database.Database): void {
