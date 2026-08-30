@@ -41,7 +41,7 @@ async function handleMcpRequest(req: NextRequest | Request): Promise<Response> {
         status: 'ok',
         name: 'logistics-mcp',
         version: '1.0.0',
-        description: 'Uber-style Logistics & Mobility MCP Server (Rides, Packages, Freight)',
+        description: 'Logistics & Mobility MCP Server (Rides, Packages, Freight)',
         protocolVersion: '2024-11-05',
         capabilities: {
           tools: { listChanged: true },

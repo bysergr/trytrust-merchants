@@ -55,7 +55,7 @@ async function testAllMcpTools() {
   console.log('   ✅ Tool 3 passed\n');
 
   // 4. request_package_delivery
-  console.log('4️⃣ Testing tool 4: request_package_delivery (Uber Flash Bogotá)...');
+  console.log('4️⃣ Testing tool 4: request_package_delivery (Logistics Express Bogotá)...');
   const pkgReq = createPackageRequest(
     {
       vehicle_type_id: 'pkg-motorcycle',

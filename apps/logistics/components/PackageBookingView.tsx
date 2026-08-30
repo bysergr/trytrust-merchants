@@ -202,7 +202,7 @@ export function PackageBookingView({ onSuccess }: PackageBookingViewProps) {
           {/* Header */}
           <div className="mb-5">
             <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1 rounded-full">
-              Uber Flash Envíos Bogotá
+              Logistics Express Envíos Bogotá
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2">
               Send a Custom Package

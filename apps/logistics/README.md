@@ -1,13 +1,13 @@
-# Uber-Style Logistics & Mobility Platform + MCP Server
+# Logistics & Mobility Platform + MCP Server
 
 A unified logistics and mobility web platform and Model Context Protocol (MCP) server built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, **shadcn/ui**, and **better-sqlite3**.
 
 Offers three core service lines under one cohesive brand:
-1. **Passenger Rides** (like UberX / Comfort / XL) — On-demand ride-hailing with live driver matching.
-2. **Package Delivery** (like Uber Connect) — Same-day door-to-door courier dispatch via motorcycle and van.
-3. **Freight & Cargo** (like Uber Freight) — Heavy freight moves with cargo vans, 16ft box trucks, and flatbeds.
+1. **Passenger Rides** (City Economy, Comfort Plus, XL, VIP) — On-demand ride-hailing with live driver matching.
+2. **Package Delivery** (Express Envíos) — Same-day door-to-door courier dispatch via motorcycle and van.
+3. **Freight & Cargo** (Logistics Carga) — Heavy freight moves with cargo vans, 16ft box trucks, and flatbeds.
 
-All three services share the exact same database and business logic layer, consumable interchangeably via the modern **Uber-inspired Web UI** or via the **8 MCP Tools** (Stdio / HTTP SSE).
+All three services share the exact same database and business logic layer, consumable interchangeably via the modern **Logistics Web UI** or via the **8 MCP Tools** (Stdio / HTTP SSE).
 
 ---
 
@@ -117,7 +117,7 @@ pnpm seed
 ```bash
 pnpm dev
 ```
-Open [http://localhost:3000](http://localhost:3000) for the Uber Web App or [http://localhost:3000/admin](http://localhost:3000/admin) for the Admin table.
+Open [http://localhost:3000](http://localhost:3000) for the Logistics Web App or [http://localhost:3000/admin](http://localhost:3000/admin) for the Admin table.
 
 ### Run MCP Server (Stdio)
 ```bash

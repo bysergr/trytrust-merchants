@@ -213,7 +213,7 @@ export function TrackingView({ requestId, onBackToBooking, onStatusChange }: Tra
             <div className="flex items-center justify-between mt-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950 border border-emerald-800 px-2.5 py-0.5 rounded-full">
-                  UBER {request.service.toUpperCase()} BOGOTÁ
+                  LOGISTICS {request.service.toUpperCase()} BOGOTÁ
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1.5">
                   {isCancelled

@@ -65,7 +65,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
-      {/* Top Uber-style Navigation */}
+      {/* Top Logistics Navigation */}
       <Navbar
         activeTab={activeTab}
         onSelectTab={handleTabChange}

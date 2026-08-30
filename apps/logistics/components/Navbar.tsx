@@ -33,7 +33,7 @@ export function Navbar({
             <BrandLogo />
           </button>
 
-          {/* Primary Navigation Tabs - Authentic Uber Style */}
+          {/* Primary Navigation Tabs */}
           <nav className="hidden md:flex items-center gap-1.5">
             <button
               onClick={() => onSelectTab('ride')}
@@ -55,7 +55,7 @@ export function Navbar({
               }`}
             >
               <Package className="w-4 h-4 text-emerald-400" />
-              Package (Flash)
+              Package (Envíos)
             </button>
             <button
               onClick={() => onSelectTab('freight')}

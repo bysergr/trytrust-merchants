@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Uber Logistics & Mobility Platform | Bogotá D.C.",
+  title: "Logistics Platform | Bogotá D.C.",
   description: "Unified web platform and MCP server for passenger rides, express courier delivery, and commercial freight transport in Bogotá.",
   icons: {
     icon: [

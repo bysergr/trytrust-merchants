@@ -68,8 +68,8 @@ export function BrandLogo({ className = '', size = 'md', showSubtitle = true }: 
       {/* Brand Typography */}
       <div className="flex flex-col">
         <div className="flex items-center gap-1.5">
-          <span className="font-black text-lg sm:text-xl tracking-tighter text-white font-sans">
-            UBER
+          <span className="font-black text-lg sm:text-xl tracking-tight text-white font-sans uppercase">
+            LOGISTICS
           </span>
           <span className="text-[10px] font-black tracking-widest text-emerald-400 bg-emerald-950/90 border border-emerald-800/80 px-1.5 py-0.5 rounded uppercase">
             BOGOTÁ
@@ -77,7 +77,7 @@ export function BrandLogo({ className = '', size = 'md', showSubtitle = true }: 
         </div>
         {showSubtitle && (
           <span className="text-[10px] font-medium tracking-tight text-neutral-400 -mt-0.5">
-            Logistics & Mobility Hub
+            Integrated Mobility & Cargo Hub
           </span>
         )}
       </div>

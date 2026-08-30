@@ -282,7 +282,7 @@ export function registerMcpTools(server: any): void {
   registerTool(
     server,
     'request_package_delivery',
-    'Request a courier delivery in Bogotá for packages, documents, or parcels (Uber Flash). Dispatches motorcycle or van courier.',
+    'Request an express courier delivery in Bogotá for packages, documents, or parcels. Dispatches motorcycle or van courier.',
     {
       session_id: z.string().optional().describe('Optional session handle. If not provided, a new session ID is created and returned.'),
       vehicle_type_id: z.string().describe('ID of courier vehicle ("pkg-motorcycle" or "pkg-courier-van")'),
@@ -341,7 +341,7 @@ export function registerMcpTools(server: any): void {
 
         const formatted = {
           success: true,
-          message: 'Uber Flash courier in Bogotá dispatched successfully!',
+          message: 'Logistics courier in Bogotá dispatched successfully!',
           session_id: effectiveSessionId,
           request_id: request.id,
           service: request.service,
@@ -668,7 +668,7 @@ export function registerMcpTools(server: any): void {
 
 export function createLogisticsMcpServer(): McpServer {
   const server = new McpServer({
-    name: 'uber-bogota-mcp',
+    name: 'logistics-bogota-mcp',
     version: '1.0.0',
   });
 

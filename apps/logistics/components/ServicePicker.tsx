@@ -49,20 +49,19 @@ export function ServicePicker({ onSelectService }: ServicePickerProps) {
               Ride (Viajes)
             </h2>
             <p className="text-neutral-400 text-sm leading-relaxed mb-6">
-              Everyday UberX, spacious Uber Comfort, and VIP Uber Black across Chicó, Chapinero, Usaquén, and El Dorado.
+              Economy City Sedans, spacious Comfort Plus, and Executive Black VIP across Chicó, Chapinero, Usaquén, and El Dorado.
             </p>
           </div>
 
           <div>
             {/* Visual Vehicle Preview */}
-            <div className="relative w-full h-32 rounded-2xl bg-black border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-2">
+            <div className="relative w-full h-36 rounded-2xl bg-neutral-950 border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-0">
               <Image
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Audi_A8_D5_(2021)_IMG_8322.jpg"
-                alt="Ride"
+                src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80"
+                alt="Logistics Passenger Ride"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-contain p-2 group-hover:scale-105 transition-transform"
-                unoptimized
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
 
@@ -89,7 +88,7 @@ export function ServicePicker({ onSelectService }: ServicePickerProps) {
                 <Package className="w-7 h-7" />
               </div>
               <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1 rounded-full">
-                Uber Flash Envíos
+                Logistics Express Envíos
               </span>
             </div>
 
@@ -103,14 +102,13 @@ export function ServicePicker({ onSelectService }: ServicePickerProps) {
 
           <div>
             {/* Visual Vehicle Preview */}
-            <div className="relative w-full h-32 rounded-2xl bg-black border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-2">
+            <div className="relative w-full h-36 rounded-2xl bg-neutral-950 border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-0">
               <Image
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Norton_Motorcycle.jpg"
-                alt="Package Courier"
+                src="https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80"
+                alt="Package Courier Delivery"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-contain p-2 group-hover:scale-105 transition-transform"
-                unoptimized
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
 
@@ -151,14 +149,13 @@ export function ServicePicker({ onSelectService }: ServicePickerProps) {
 
           <div>
             {/* Visual Vehicle Preview */}
-            <div className="relative w-full h-32 rounded-2xl bg-black border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-2">
+            <div className="relative w-full h-36 rounded-2xl bg-neutral-950 border border-neutral-800/80 mb-6 overflow-hidden flex items-center justify-center p-0">
               <Image
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Red_Ford_Cargo_Vintage_Vehicles_Shildon.jpg"
-                alt="Freight Truck"
+                src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"
+                alt="Freight Logistics Cargo Truck"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-contain p-2 group-hover:scale-105 transition-transform"
-                unoptimized
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
 

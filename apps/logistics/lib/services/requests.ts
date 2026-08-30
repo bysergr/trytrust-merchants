@@ -12,7 +12,7 @@ import {
 import { calculateQuote, estimateCoordinates } from './geo-pricing';
 import { getVehicleTypeById } from './vehicles';
 
-// Simulated realistic driver profiles for authentic Bogotá Uber feel
+// Simulated realistic driver profiles for authentic Bogotá Logistics feel
 const SIMULATED_DRIVERS: Record<ServiceType, Array<{ name: string; plate: string; rating: number }>> = {
   ride: [
     { name: 'Santiago Ramirez', plate: 'GHT-812 (Gris Chevrolet Onix)', rating: 4.96 },

@@ -41,16 +41,15 @@ export function VehicleCard({
       {/* Left side: Photo & details */}
       <div className="flex items-center gap-3.5 min-w-0">
         {/* Vehicle Real Photograph */}
-        <div className="relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl bg-neutral-900 border border-neutral-800 flex-shrink-0 overflow-hidden flex items-center justify-center p-1">
+        <div className="relative w-20 h-16 sm:w-24 sm:h-18 rounded-xl bg-neutral-900 border border-neutral-800 flex-shrink-0 overflow-hidden flex items-center justify-center shadow-inner">
           {!imageError && vehicle.icon_url ? (
             <Image
               src={vehicle.icon_url}
               alt={vehicle.name}
               fill
               sizes="(max-width: 640px) 80px, 96px"
-              className="object-contain p-1 rounded-lg transition-transform hover:scale-105"
+              className="object-cover rounded-xl transition-transform duration-300 group-hover:scale-105"
               onError={() => setImageError(true)}
-              unoptimized
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-neutral-400 text-xs font-bold text-center p-1">
